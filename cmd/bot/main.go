@@ -23,6 +23,7 @@ func main() {
 	if err != nil {
 		errorLog.Panic(err)
 	}
+	//dssd
 
 	bot.Debug = true
 
