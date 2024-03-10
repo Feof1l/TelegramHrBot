@@ -23,7 +23,6 @@ func main() {
 	if err != nil {
 		errorLog.Panic(err)
 	}
-	//dssd
 
 	bot.Debug = true
 
@@ -37,7 +36,7 @@ func main() {
 	for update := range updates {
 		// универсальный ответ на любое сообщение
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
-		reply := ""
+		//reply := ""
 		if update.Message == nil { // If we got a message
 			//infoLog.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
 			continue
@@ -45,8 +44,9 @@ func main() {
 
 		switch update.Message.Command() {
 		case "start":
-			reply = telegram.StartMessage
+			msg = tgbotapi.NewMessage(update.Message.Chat.ID, telegram.StartMessage)
 			msg.ReplyMarkup = telegram.AnswerKeyBoard
+
 		}
 		switch update.Message.Text {
 		case "open":
@@ -56,10 +56,9 @@ func main() {
 
 		}
 		// создаем ответное сообщение
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, reply)
 
 		if _, err := bot.Send(msg); err != nil {
-			errorLog.Panic(err)
+			errorLog.Println(err)
 		}
 
 	}
