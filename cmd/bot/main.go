@@ -1,12 +1,17 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"os"
 
 	"github.com/Feof1l/TelegramHrBot/pkg/telegram"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
+
+type Config struct {
+	TelegramBotToken string
+}
 
 func main() {
 
@@ -15,11 +20,19 @@ func main() {
 	//аналогично для логов с ошибками, такеж включим вывод фйла и номера  строки, где произошла ошибка
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
+	// декодируем файл json, в котором хранится конфиг - токен бота
+	file, _ := os.Open("config.json")
+	decoder := json.NewDecoder(file)
+	configuration := Config{}
+	err := decoder.Decode(&configuration)
+	if err != nil {
+		log.Panic(err)
+	}
 	/*app := &application{
 		errorLog: errorLog,
 		infoLog:  infoLog,
 	}*/
-	bot, err := tgbotapi.NewBotAPI(token)
+	bot, err := tgbotapi.NewBotAPI(configuration.TelegramBotToken)
 	if err != nil {
 		errorLog.Panic(err)
 	}
