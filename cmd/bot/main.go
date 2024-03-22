@@ -47,10 +47,117 @@ func main() {
 	updates, err := bot.GetUpdatesChan(u)
 
 	for update := range updates {
-		// универсальный ответ на любое сообщение
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
-		//reply := ""
-		if update.Message == nil { // If we got a message
+		if update.Message != nil {
+			// Construct a new message from the given chat ID and containing
+			// the text that we received.
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
+
+			// If the message was open, add a copy of our numeric keyboard.
+			switch update.Message.Command() {
+			case "start":
+				msg = tgbotapi.NewMessage(update.Message.Chat.ID, telegram.StartMessage)
+				msg.ReplyMarkup = telegram.AnswerKeyBoard
+
+			}
+
+			// Send the message.
+			if _, err = bot.Send(msg); err != nil {
+				panic(err)
+			}
+		} else if update.CallbackQuery != nil {
+			// Respond to the callback query, telling Telegram to show the user
+			// a message with the data received.
+			switch update.CallbackQuery.Data {
+			case "Заблокировать":
+				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Data)
+				if _, err := bot.Send(msg); err != nil {
+					panic(err)
+				}
+			default:
+				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "AAAAAAAAAAAAAAAAAA")
+				if _, err := bot.Send(msg); err != nil {
+					panic(err)
+				}
+
+			}
+
+		}
+	}
+}
+
+/*
+			// универсальный ответ на любое сообщение
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
+			//reply := ""
+			if update.Message == nil { // If we got a message
+				//infoLog.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
+				continue
+			}
+
+			switch update.Message.Command() {
+			case "start":
+				msg = tgbotapi.NewMessage(update.Message.Chat.ID, telegram.StartMessage)
+				msg.ReplyMarkup = telegram.AnswerKeyBoard
+
+			}
+			if update.CallbackQuery != nil {
+				// Обработка нажатия на кнопку из inline меню
+				if update.CallbackQuery.Data == "Заблокировать" {
+					bot.Send(msg)
+				}
+			}
+			switch update.Message.Text {
+			case "open":
+				//msg.ReplyMarkup = numericKeyboard
+			case "close":
+				//msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+
+			}
+			// создаем ответное сообщение
+
+			if _, err := bot.Send(msg); err != nil {
+				errorLog.Println(err)
+			}
+
+		}
+	}
+*/
+type application struct {
+	errorLog *log.Logger
+	infoLog  *log.Logger
+}
+
+func clearChatHistory(bot *tgbotapi.BotAPI, chatID int64) error {
+	// Получаем последнее обновление в чате
+	updates, err := bot.GetUpdates(tgbotapi.UpdateConfig{Timeout: 1})
+	if err != nil {
+		return err
+	}
+
+	// Находим ID последнего сообщения
+	var lastMessageID int
+	for _, update := range updates {
+		if update.Message != nil && update.Message.Chat.ID == chatID {
+			lastMessageID = update.Message.MessageID
+		}
+	}
+
+	// Удаляем сообщения в диапазоне от 1 до последнего сообщения
+	for i := 1; i <= lastMessageID; i++ {
+		_, err := bot.DeleteMessage(tgbotapi.DeleteMessageConfig{
+			ChatID:    chatID,
+			MessageID: i,
+		})
+		if err != nil {
+			log.Println("Failed to delete message:", err)
+		}
+	}
+
+	return nil
+}
+
+/*
+if update.Message == nil { // If we got a message
 			//infoLog.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
 			continue
 		}
@@ -61,23 +168,37 @@ func main() {
 			msg.ReplyMarkup = telegram.AnswerKeyBoard
 
 		}
+		if update.CallbackQuery != nil {
+			// Обработка нажатия на кнопку во всплывающем окне
+			if update.CallbackQuery.Data == "button_pressed" {
+				// Здесь можно добавить логику обработки нажатия на кнопку
+				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Вы нажали на кнопку!")
+				bot.Send(msg)
+			}
+		} else if update.Message != nil {
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
+			switch update.Message.Text {
+			case "/start":
+				// Создаем всплывающую клавиатуру
+				inlineBtn := tgbotapi.NewInlineKeyboardMarkup(
+					tgbotapi.NewInlineKeyboardRow(
+						tgbotapi.NewInlineKeyboardButtonData("Нажми меня", "button_pressed"),
+					),
+				)
+
+				msg.Text = "Привет! Нажми на кнопку, чтобы получить сообщение."
+				msg.ReplyMarkup = inlineBtn
+			default:
+				msg.Text = "Я не понимаю, что вы имеете в виду."
+			}
+		}
 		switch update.Message.Text {
-		case "open":
-			//msg.ReplyMarkup = numericKeyboard
+
 		case "close":
 			//msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 
+		default:
+			//continue
 		}
 		// создаем ответное сообщение
-
-		if _, err := bot.Send(msg); err != nil {
-			errorLog.Println(err)
-		}
-
-	}
-}
-
-type application struct {
-	errorLog *log.Logger
-	infoLog  *log.Logger
-}
+*/

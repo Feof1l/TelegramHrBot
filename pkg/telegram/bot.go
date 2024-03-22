@@ -13,6 +13,8 @@ var AnswerKeyBoard = tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardButtonData("Заблокировать", "Заблокировать"),
 	),
 	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonURL("Пользовательское соглашение", "http://1.com"),
+		tgbotapi.NewInlineKeyboardButtonURL("Пользовательское соглашение", UserAgreement),
 	),
 )
+var BlockedUsers = make(map[int64]bool)
+var UserAgreement = "https://telegram.org/tos/ru"
