@@ -21,17 +21,15 @@ func main() {
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
 	// декодируем файл json, в котором хранится конфиг - токен бота
-	file, _ := os.Open("config.json")
-	decoder := json.NewDecoder(file)
-	configuration := Config{}
-	err := decoder.Decode(&configuration)
-	if err != nil {
-		log.Panic(err)
-	}
+
 	/*app := &application{
 		errorLog: errorLog,
 		infoLog:  infoLog,
 	}*/
+	configuration, err := decodeConfig("config.json")
+	if err != nil {
+		log.Fatal(err)
+	}
 	bot, err := tgbotapi.NewBotAPI(configuration.TelegramBotToken)
 	if err != nil {
 		errorLog.Panic(err)
@@ -39,50 +37,50 @@ func main() {
 
 	bot.Debug = true
 
-	infoLog.Printf("Authorized on account %s", bot.Self.UserName)
+	telegramBot := telegram.NewBot(bot, errorLog, infoLog)
+	func() {
+		if err := telegramBot.Start(); err != nil {
+			errorLog.Println(err)
+		}
+	}()
 
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
+	////////////////////////
 
-	updates, err := bot.GetUpdatesChan(u)
+}
+func decodeConfig(fileName string) (Config, error) {
+	file, _ := os.Open(fileName)
+	decoder := json.NewDecoder(file)
+	configuration := Config{}
+	err := decoder.Decode(&configuration)
+	return configuration, err
+}
+func clearChatHistory(bot *tgbotapi.BotAPI, chatID int64) error {
+	// Получаем последнее обновление в чате
+	updates, err := bot.GetUpdates(tgbotapi.UpdateConfig{Timeout: 1})
+	if err != nil {
+		return err
+	}
 
-	for update := range updates {
-		if update.Message != nil {
-			// Construct a new message from the given chat ID and containing
-			// the text that we received.
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
-
-			// If the message was open, add a copy of our numeric keyboard.
-			switch update.Message.Command() {
-			case "start":
-				msg = tgbotapi.NewMessage(update.Message.Chat.ID, telegram.StartMessage)
-				msg.ReplyMarkup = telegram.AnswerKeyBoard
-
-			}
-
-			// Send the message.
-			if _, err = bot.Send(msg); err != nil {
-				panic(err)
-			}
-		} else if update.CallbackQuery != nil {
-			// Respond to the callback query, telling Telegram to show the user
-			// a message with the data received.
-			switch update.CallbackQuery.Data {
-			case "Заблокировать":
-				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Data)
-				if _, err := bot.Send(msg); err != nil {
-					panic(err)
-				}
-			default:
-				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "AAAAAAAAAAAAAAAAAA")
-				if _, err := bot.Send(msg); err != nil {
-					panic(err)
-				}
-
-			}
-
+	// Находим ID последнего сообщения
+	var lastMessageID int
+	for _, update := range updates {
+		if update.Message != nil && update.Message.Chat.ID == chatID {
+			lastMessageID = update.Message.MessageID
 		}
 	}
+
+	// Удаляем сообщения в диапазоне от 1 до последнего сообщения
+	for i := 1; i <= lastMessageID; i++ {
+		_, err := bot.DeleteMessage(tgbotapi.DeleteMessageConfig{
+			ChatID:    chatID,
+			MessageID: i,
+		})
+		if err != nil {
+			log.Println("Failed to delete message:", err)
+		}
+	}
+
+	return nil
 }
 
 /*
@@ -125,35 +123,6 @@ func main() {
 type application struct {
 	errorLog *log.Logger
 	infoLog  *log.Logger
-}
-
-func clearChatHistory(bot *tgbotapi.BotAPI, chatID int64) error {
-	// Получаем последнее обновление в чате
-	updates, err := bot.GetUpdates(tgbotapi.UpdateConfig{Timeout: 1})
-	if err != nil {
-		return err
-	}
-
-	// Находим ID последнего сообщения
-	var lastMessageID int
-	for _, update := range updates {
-		if update.Message != nil && update.Message.Chat.ID == chatID {
-			lastMessageID = update.Message.MessageID
-		}
-	}
-
-	// Удаляем сообщения в диапазоне от 1 до последнего сообщения
-	for i := 1; i <= lastMessageID; i++ {
-		_, err := bot.DeleteMessage(tgbotapi.DeleteMessageConfig{
-			ChatID:    chatID,
-			MessageID: i,
-		})
-		if err != nil {
-			log.Println("Failed to delete message:", err)
-		}
-	}
-
-	return nil
 }
 
 /*
