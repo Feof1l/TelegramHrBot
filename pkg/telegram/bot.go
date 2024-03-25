@@ -10,18 +10,29 @@ var StartMessage = `Привет! Я - HR бот.Сейчас задам теб�
 Если выберешь "Да", соглашаешься с условиями обрабтки данных.Продолжим диалог? `
 var BanMessage = "Вы заблокировали бота @PMIIHrBot"
 var WarningBanMessage = "Вы не можете заблокировать других ботов"
-var AnswerKeyBoard = tgbotapi.NewInlineKeyboardMarkup(
+var NoQuestionMessage = `Хорошо, понял Вас! Пожалуйста,поделитесь со мной, что явялется причиной вашего отказа? Это поможет мне при последующем отборе
+кандидатов.`
+
+var AnswerKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // inline меню для начала общения
 	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Да", "Да"),
-		tgbotapi.NewInlineKeyboardButtonData("Нет", "Нет"),
-		tgbotapi.NewInlineKeyboardButtonData("Заблокировать", "Заблокировать"),
+		tgbotapi.NewInlineKeyboardButtonData("Да", "Yes"),
+		tgbotapi.NewInlineKeyboardButtonData("Нет", "No"),
+		tgbotapi.NewInlineKeyboardButtonData("Заблокировать", "Block"),
 	),
 	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonURL("Пользовательское соглашение", UserAgreement),
 	),
 )
-var BlockedUsers = make(map[int64]bool)
-var UserAgreement = "https://telegram.org/tos/ru"
+var NoQuestionKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // // inline меню для сборе инофрмации о причинах отказа общаться с ботом
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Вакансия неинтересна", "Вакансия неинтересна"),
+		tgbotapi.NewInlineKeyboardButtonData("Уже нашел работу", "Уже нашел работу"),
+		tgbotapi.NewInlineKeyboardButtonData("Другая причина", "Другая причина"),
+		tgbotapi.NewInlineKeyboardButtonData("Не хочу говорить", "Не хочу говорить"),
+	),
+)
+var BlockedUsers = make(map[string]bool)          // хэш мапа для хранения информации о заблокированных пользователях
+var UserAgreement = "https://telegram.org/tos/ru" // сылка на пользовательское соглашение
 
 type Bot struct {
 	bot      *tgbotapi.BotAPI
@@ -46,30 +57,13 @@ func (b *Bot) Start() error {
 	return nil
 }
 func (b *Bot) clearChatHistory(chatID int64) error {
-	// Получаем последнее обновление в чате
-	updates, err := b.bot.GetUpdates(tgbotapi.UpdateConfig{Timeout: 1})
-	if err != nil {
-		return err
+
+	msgToDelete := tgbotapi.DeleteMessageConfig{
+		ChatID:    chatID,
+		MessageID: msgID,
 	}
 
-	// Находим ID последнего сообщения
-	var lastMessageID int
-	for _, update := range updates {
-		if update.Message != nil && update.Message.Chat.ID == chatID {
-			lastMessageID = update.Message.MessageID
-		}
-	}
-
-	// Удаляем сообщения в диапазоне от 1 до последнего сообщения
-	for i := 1; i <= lastMessageID; i++ {
-		_, err := b.bot.DeleteMessage(tgbotapi.DeleteMessageConfig{
-			ChatID:    chatID,
-			MessageID: i,
-		})
-		if err != nil {
-			b.errorLog.Println("Failed to delete message:", err)
-		}
-	}
+	_, err := b.bot.MakeRequest(msgToDelete)
 
 	return nil
 }
@@ -90,24 +84,32 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 
 			// Send the message.
 			if _, err := b.bot.Send(msg); err != nil {
-				panic(err)
+				b.errorLog.Println(err)
 			}
 		} else if update.CallbackQuery != nil {
 			// Respond to the callback query, telling Telegram to show the user
 			// a message with the data received.
 			switch update.CallbackQuery.Data {
-			case "Заблокировать":
+			case "Block":
+				BlockedUsers[b.bot.Self.UserName] = true
 				err := b.clearChatHistory(update.Message.Chat.ID)
 				if err != nil {
 					b.errorLog.Println(err)
 				}
-				/*msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Data)
-				if _, err := bot.Send(msg); err != nil {
-					panic(err)
-				}*/
+			case "No":
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, NoQuestionMessage)
+				msg.ReplyMarkup = NoQuestionKeyBoard
+				if _, err := b.bot.Send(msg); err != nil {
+					b.errorLog.Println(err)
+				}
+				if update.CallbackQuery != nil {
+					//логика добавления update.CallbackQuery.Data в БД
+				}
+				msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Спасибо за обратную связь! Удачи!")
+			case "Yes":
 
 			default:
-				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "AAAAAAAAAAAAAAAAAA")
+				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Пожалуйста,используйте кнопки для общения с ботом")
 				if _, err := b.bot.Send(msg); err != nil {
 					b.errorLog.Println(err)
 				}
@@ -124,4 +126,12 @@ func (b *Bot) initUpdatesChannel() (tgbotapi.UpdatesChannel, error) {
 	u.Timeout = 60
 
 	return b.bot.GetUpdatesChan(u)
+}
+func (b *Bot) IsBlockedUser() bool {
+	for key, _ := range BlockedUsers {
+		if key == b.bot.Self.UserName && BlockedUsers[key] == true {
+			return false
+		}
+	}
+	return true
 }
