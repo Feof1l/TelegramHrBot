@@ -12,11 +12,22 @@ var BanMessage = "Вы заблокировали бота @PMIIHrBot"
 var WarningBanMessage = "Вы не можете заблокировать других ботов"
 var NoQuestionMessage = `Хорошо, понял Вас! Пожалуйста,поделитесь со мной, что явялется причиной вашего отказа? Это поможет мне при последующем отборе
 кандидатов.`
-
+var StartDialogMessage = `Отлично!Я очень рад!Тогда начнем наш диалог) `
+var EducationQuestion = `Скажи,есть ли у тебя высшее техническое образование?`
+var EducationKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // // inline меню для сборе инофрмации об образовании
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Да", "Have high technical education"),
+	),
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Нет", "Haven't high technical education"),
+	),
+)
 var AnswerKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // inline меню для начала общения
 	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("Да", "Yes"),
 		tgbotapi.NewInlineKeyboardButtonData("Нет", "No"),
+	),
+	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("Заблокировать", "Block"),
 	),
 	tgbotapi.NewInlineKeyboardRow(
@@ -64,24 +75,36 @@ func (b *Bot) Start() error {
 	return nil
 }
 func (b *Bot) clearChatHistory(chatID int64) error {
-
-	for key, _ := range MessageIdDic {
+	log.Println("AAAAAAAAAAAAAAAAAAAAAAAAAAA", MessageIdDic)
+	for key := range MessageIdDic {
 		msgToDelete := tgbotapi.DeleteMessageConfig{
 			ChatID:    chatID,
-			MessageID: MessageIdDic[key],
+			MessageID: key,
 		}
+
 		_, err := b.bot.DeleteMessage(msgToDelete)
 		if err != nil {
 			b.errorLog.Println(err)
+			return err
 		}
 	}
 
 	return nil
 }
+func (b *Bot) SendMsg(msg tgbotapi.MessageConfig) error {
+	sendMessage, err := b.bot.Send(msg)
+	if err != nil {
+		b.errorLog.Println(err)
+		return err
+	}
+	MessageIdDic[sendMessage.MessageID]++
+	return nil
+}
 func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 	for update := range updates {
-		if update.Message != nil {
-			MessageIdDic[update.UpdateID]++
+
+		if update.Message != nil && b.IsBlockedUser() { // потом переделать
+			MessageIdDic[update.Message.MessageID]++
 			// Construct a new message from the given chat ID and containing
 			// the text that we received.
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
@@ -95,9 +118,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 			}
 
 			// Send the message.
-			if _, err := b.bot.Send(msg); err != nil {
-				b.errorLog.Println(err)
-			}
+			b.SendMsg(msg)
 
 		} else if update.CallbackQuery != nil {
 			// Respond to the callback query, telling Telegram to show the user
@@ -105,17 +126,17 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 			switch update.CallbackQuery.Data {
 			case "Block":
 				BlockedUsers[b.bot.Self.UserName] = true
-				err := b.clearChatHistory(update.Message.Chat.ID)
+				err := b.clearChatHistory(update.CallbackQuery.Message.Chat.ID)
 				if err != nil {
 					b.errorLog.Println(err)
 				}
+				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Вы заблокировали бота, спасибо за общение!")
+				b.SendMsg(msg)
 			case "No":
 				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, NoQuestionMessage)
 
 				msg.ReplyMarkup = NoQuestionKeyBoard
-				if _, err := b.bot.Send(msg); err != nil {
-					b.errorLog.Println(err)
-				}
+				b.SendMsg(msg)
 
 			case "vacancy is not interesting":
 				b.feedback(update.CallbackQuery)
@@ -126,12 +147,14 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 			case "don't want to talk":
 				b.feedback(update.CallbackQuery)
 			case "Yes":
-
+				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, StartDialogMessage)
+				b.SendMsg(msg)
+				msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, EducationQuestion)
+				msg.ReplyMarkup = EducationKeyBoard
+				b.SendMsg(msg)
 			default:
 				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Пожалуйста,используйте кнопки для общения с ботом")
-				if _, err := b.bot.Send(msg); err != nil {
-					b.errorLog.Println(err)
-				}
+				b.SendMsg(msg)
 
 			}
 
@@ -142,9 +165,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 func (b *Bot) feedback(CallbackQuery *tgbotapi.CallbackQuery) {
 	//логика добавления update.CallbackQuery.Data в БД
 	msg := tgbotapi.NewMessage(CallbackQuery.Message.Chat.ID, "Спасибо за обратную связь! Удачи!")
-	if _, err := b.bot.Send(msg); err != nil {
-		b.errorLog.Println(err)
-	}
+	b.SendMsg(msg)
 
 }
 func (b *Bot) initUpdatesChannel() (tgbotapi.UpdatesChannel, error) {
