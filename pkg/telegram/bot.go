@@ -25,14 +25,21 @@ var AnswerKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // inline меню для
 )
 var NoQuestionKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // // inline меню для сборе инофрмации о причинах отказа общаться с ботом
 	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Вакансия неинтересна", "Вакансия неинтересна"),
-		tgbotapi.NewInlineKeyboardButtonData("Уже нашел работу", "Уже нашел работу"),
-		tgbotapi.NewInlineKeyboardButtonData("Другая причина", "Другая причина"),
-		tgbotapi.NewInlineKeyboardButtonData("Не хочу говорить", "Не хочу говорить"),
+		tgbotapi.NewInlineKeyboardButtonData("Вакансия неинтересна", "vacancy is not interesting"),
+	),
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Уже нашел работу", "already found a job"),
+	),
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Другая причина", "another reason"),
+	),
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Не хочу говорить", "don't want to talk"),
 	),
 )
 var BlockedUsers = make(map[string]bool)          // хэш мапа для хранения информации о заблокированных пользователях
 var UserAgreement = "https://telegram.org/tos/ru" // сылка на пользовательское соглашение
+var MessageIdDic = make(map[int]int)
 
 type Bot struct {
 	bot      *tgbotapi.BotAPI
@@ -58,18 +65,23 @@ func (b *Bot) Start() error {
 }
 func (b *Bot) clearChatHistory(chatID int64) error {
 
-	msgToDelete := tgbotapi.DeleteMessageConfig{
-		ChatID:    chatID,
-		MessageID: msgID,
+	for key, _ := range MessageIdDic {
+		msgToDelete := tgbotapi.DeleteMessageConfig{
+			ChatID:    chatID,
+			MessageID: MessageIdDic[key],
+		}
+		_, err := b.bot.DeleteMessage(msgToDelete)
+		if err != nil {
+			b.errorLog.Println(err)
+		}
 	}
-
-	_, err := b.bot.MakeRequest(msgToDelete)
 
 	return nil
 }
 func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 	for update := range updates {
 		if update.Message != nil {
+			MessageIdDic[update.UpdateID]++
 			// Construct a new message from the given chat ID and containing
 			// the text that we received.
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
@@ -86,6 +98,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 			if _, err := b.bot.Send(msg); err != nil {
 				b.errorLog.Println(err)
 			}
+
 		} else if update.CallbackQuery != nil {
 			// Respond to the callback query, telling Telegram to show the user
 			// a message with the data received.
@@ -97,15 +110,21 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 					b.errorLog.Println(err)
 				}
 			case "No":
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, NoQuestionMessage)
+				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, NoQuestionMessage)
+
 				msg.ReplyMarkup = NoQuestionKeyBoard
 				if _, err := b.bot.Send(msg); err != nil {
 					b.errorLog.Println(err)
 				}
-				if update.CallbackQuery != nil {
-					//логика добавления update.CallbackQuery.Data в БД
-				}
-				msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Спасибо за обратную связь! Удачи!")
+
+			case "vacancy is not interesting":
+				b.feedback(update.CallbackQuery)
+			case "already found a job":
+				b.feedback(update.CallbackQuery)
+			case "another reason":
+				b.feedback(update.CallbackQuery)
+			case "don't want to talk":
+				b.feedback(update.CallbackQuery)
 			case "Yes":
 
 			default:
@@ -120,7 +139,14 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 	}
 
 }
+func (b *Bot) feedback(CallbackQuery *tgbotapi.CallbackQuery) {
+	//логика добавления update.CallbackQuery.Data в БД
+	msg := tgbotapi.NewMessage(CallbackQuery.Message.Chat.ID, "Спасибо за обратную связь! Удачи!")
+	if _, err := b.bot.Send(msg); err != nil {
+		b.errorLog.Println(err)
+	}
 
+}
 func (b *Bot) initUpdatesChannel() (tgbotapi.UpdatesChannel, error) {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60

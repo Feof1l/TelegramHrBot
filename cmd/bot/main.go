@@ -28,7 +28,7 @@ func main() {
 	}*/
 	configuration, err := decodeConfig("config.json")
 	if err != nil {
-		log.Fatal(err)
+		errorLog.Println(err)
 	}
 	bot, err := tgbotapi.NewBotAPI(configuration.TelegramBotToken)
 	if err != nil {
