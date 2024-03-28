@@ -64,7 +64,7 @@ func NewBot(bot *tgbotapi.BotAPI, errorLog *log.Logger, infoLog *log.Logger) *Bo
 }
 func (b *Bot) Start() error {
 
-	log.Printf("Authorized on account %s", b.bot.Self.UserName)
+	b.infoLog.Printf("Authorized on account %s", b.bot.Self.UserName)
 
 	updates, err := b.initUpdatesChannel()
 	if err != nil {
@@ -75,7 +75,6 @@ func (b *Bot) Start() error {
 	return nil
 }
 func (b *Bot) clearChatHistory(chatID int64) error {
-	log.Println("AAAAAAAAAAAAAAAAAAAAAAAAAAA", MessageIdDic)
 	for key := range MessageIdDic {
 		msgToDelete := tgbotapi.DeleteMessageConfig{
 			ChatID:    chatID,
