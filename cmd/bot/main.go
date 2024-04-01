@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/Feof1l/TelegramHrBot/pkg/telegram"
+	_ "github.com/go-sql-driver/mysql"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
@@ -18,7 +19,7 @@ type Config struct {
 func main() {
 
 	// Определение нового флага из командной строки для настройки MySQL подключения.
-	dsn := flag.String("dsn", "admin:dfyz10012003dfyz@/candidates?parseTime=true", "Название MySQL источника данных")
+	dsn := flag.String("dsn", "admin:dfyz10012003dfyz@/Candidates?parseTime=true", "Название MySQL источника данных")
 	// извлекаем флаг из командной строки
 	flag.Parse()
 	// создаем новый логер для вывода информационных сообщенйи в поток stdout c припиской info
