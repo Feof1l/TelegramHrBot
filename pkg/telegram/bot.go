@@ -7,71 +7,6 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
-var StartMessage = `Привет! Я - HR бот.Сейчас задам тебе несколько вопросов. Если готов(а) продолжить общение со мной, жми "Да".
-Если выберешь "Да", соглашаешься с условиями обрабтки данных.Продолжим диалог? `
-var BanMessage = "Вы заблокировали бота @PMIIHrBot"
-var WarningBanMessage = "Вы не можете заблокировать других ботов"
-var NoQuestionMessage = `Хорошо, понял Вас! Пожалуйста,поделитесь со мной, что явялется причиной вашего отказа? Это поможет мне при последующем отборе
-кандидатов.`
-var StartDialogMessage = `Отлично!Я очень рад!Тогда начнем наш диалог) `
-var EducationQuestion = `Скажи,есть ли у тебя высшее техническое образование?`
-var ChoiseProfil = `Здравствуйте! На данный момент у нас открыт набор на следующие позиции:`
-
-var ChoiseProfilKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // // inline меню для сборе инофрмации об образовании
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Go-разработчик", "Golang backend - developer"),
-		tgbotapi.NewInlineKeyboardButtonData("Java-разработчик", "jun java dev"),
-	),
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Frontend-разработчик", "middle js dev"),
-		tgbotapi.NewInlineKeyboardButtonData("Специалист DS", "middle data science"),
-	),
-)
-var ChoisePosition = `Здравствуйте! На данный момент у нас открыт набор на следующие позиции:`
-
-var ChoisePositionKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // // inline меню для сборе инофрмации об образовании
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Junior", "Junior"),
-		tgbotapi.NewInlineKeyboardButtonData("Middle", "Middle"),
-	),
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Стажёр", "Intern"),
-	),
-)
-var EducationKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // // inline меню для сборе инофрмации об образовании
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Да", "Have high technical education"),
-	),
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Нет", "Haven't high technical education"),
-	),
-)
-var AnswerKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // inline меню для начала общения
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Да", "Yes"),
-		tgbotapi.NewInlineKeyboardButtonData("Нет", "No"),
-	),
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Заблокировать", "Block"),
-	),
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonURL("Пользовательское соглашение", UserAgreement),
-	),
-)
-var NoQuestionKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // // inline меню для сборе инофрмации о причинах отказа общаться с ботом
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Вакансия неинтересна", "vacancy is not interesting"),
-	),
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Уже нашел работу", "already found a job"),
-	),
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Другая причина", "another reason"),
-	),
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Не хочу говорить", "don't want to talk"),
-	),
-)
 var BlockedUsers = make(map[string]bool)          // хэш мапа для хранения информации о заблокированных пользователях
 var UserAgreement = "https://telegram.org/tos/ru" // сылка на пользовательское соглашение
 var MessageIdDic = make(map[int]int)
@@ -136,8 +71,8 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 			// If the message was open, add a copy of our numeric keyboard.
 			switch update.Message.Command() {
 			case "start":
-				msg = tgbotapi.NewMessage(update.Message.Chat.ID, StartMessage)
-				msg.ReplyMarkup = AnswerKeyBoard
+				msg = tgbotapi.NewMessage(update.Message.Chat.ID, startMessage)
+				msg.ReplyMarkup = answerKeyBoard
 
 			}
 			b.SendMsg(msg)
@@ -157,9 +92,9 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Вы заблокировали бота, спасибо за общение!")
 				b.SendMsg(msg)
 			case "No":
-				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, NoQuestionMessage)
+				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, noQuestionMessage)
 
-				msg.ReplyMarkup = NoQuestionKeyBoard
+				msg.ReplyMarkup = noQuestionKeyBoard
 				b.SendMsg(msg)
 
 			case "vacancy is not interesting", "another reason", "don't want to talk", "already found a job":
@@ -172,17 +107,17 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				b.SendMsg(msg)*/
 				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Выберети специализацию, на которой хотите работать!")
 				b.SendMsg(msg)
-				msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, ChoiseProfil)
+				msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, choiseProfil)
 
-				msg.ReplyMarkup = ChoiseProfilKeyBoard
+				msg.ReplyMarkup = choiseProfilKeyBoard
 
 				b.SendMsg(msg)
 			case "Golang backend - developer", "Java backend - developer":
 				queryPosition.Profil = update.CallbackQuery.Data
 				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Выберети позицию, на которой хотите работать!")
 				b.SendMsg(msg)
-				msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, ChoisePosition)
-				msg.ReplyMarkup = ChoisePositionKeyBoard
+				msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, choisePosition)
+				msg.ReplyMarkup = choisePositionKeyBoard
 
 				b.SendMsg(msg)
 			case "Junior", "Middle", "Intern":
