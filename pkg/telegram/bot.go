@@ -3,6 +3,7 @@ package telegram
 import (
 	"log"
 
+	"github.com/Feof1l/TelegramHrBot/pkg/models"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
@@ -14,6 +15,29 @@ var NoQuestionMessage = `Хорошо, понял Вас! Пожалуйста,�
 кандидатов.`
 var StartDialogMessage = `Отлично!Я очень рад!Тогда начнем наш диалог) `
 var EducationQuestion = `Скажи,есть ли у тебя высшее техническое образование?`
+var ChoiseProfil = `Здравствуйте! На данный момент у нас открыт набор на следующие позиции:`
+
+var ChoiseProfilKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // // inline меню для сборе инофрмации об образовании
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Go-разработчик", "Golang backend - developer"),
+		tgbotapi.NewInlineKeyboardButtonData("Java-разработчик", "jun java dev"),
+	),
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Frontend-разработчик", "middle js dev"),
+		tgbotapi.NewInlineKeyboardButtonData("Специалист DS", "middle data science"),
+	),
+)
+var ChoisePosition = `Здравствуйте! На данный момент у нас открыт набор на следующие позиции:`
+
+var ChoisePositionKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // // inline меню для сборе инофрмации об образовании
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Junior", "Junior"),
+		tgbotapi.NewInlineKeyboardButtonData("Middle", "Middle"),
+	),
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Стажёр", "Intern"),
+	),
+)
 var EducationKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // // inline меню для сборе инофрмации об образовании
 	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("Да", "Have high technical education"),
@@ -100,6 +124,7 @@ func (b *Bot) SendMsg(msg tgbotapi.MessageConfig) error {
 	return nil
 }
 func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
+	queryPosition := models.Position{}
 	for update := range updates {
 
 		if update.Message != nil && b.IsBlockedUser() { // потом переделать
@@ -115,9 +140,9 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				msg.ReplyMarkup = AnswerKeyBoard
 
 			}
+			b.SendMsg(msg)
 
 			// Send the message.
-			b.SendMsg(msg)
 
 		} else if update.CallbackQuery != nil {
 			// Respond to the callback query, telling Telegram to show the user
@@ -137,20 +162,32 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				msg.ReplyMarkup = NoQuestionKeyBoard
 				b.SendMsg(msg)
 
-			case "vacancy is not interesting":
-				b.feedback(update.CallbackQuery)
-			case "already found a job":
-				b.feedback(update.CallbackQuery)
-			case "another reason":
-				b.feedback(update.CallbackQuery)
-			case "don't want to talk":
+			case "vacancy is not interesting", "another reason", "don't want to talk", "already found a job":
 				b.feedback(update.CallbackQuery)
 			case "Yes":
-				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, StartDialogMessage)
+				/*msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, StartDialogMessage)
 				b.SendMsg(msg)
 				msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, EducationQuestion)
 				msg.ReplyMarkup = EducationKeyBoard
+				b.SendMsg(msg)*/
+				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Выберети специализацию, на которой хотите работать!")
 				b.SendMsg(msg)
+				msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, ChoiseProfil)
+
+				msg.ReplyMarkup = ChoiseProfilKeyBoard
+
+				b.SendMsg(msg)
+			case "Golang backend - developer", "Java backend - developer":
+				queryPosition.Profil = update.CallbackQuery.Data
+				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Выберети позицию, на которой хотите работать!")
+				b.SendMsg(msg)
+				msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, ChoisePosition)
+				msg.ReplyMarkup = ChoisePositionKeyBoard
+
+				b.SendMsg(msg)
+			case "Junior", "Middle", "Intern":
+				queryPosition.Position_name = update.CallbackQuery.Data
+
 			default:
 				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Пожалуйста,используйте кнопки для общения с ботом")
 				b.SendMsg(msg)
