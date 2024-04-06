@@ -14,18 +14,27 @@ import (
 
 type Config struct {
 	TelegramBotToken string
+	DbMysqlParams    string
 }
 
 func main() {
 
-	// Определение нового флага из командной строки для настройки MySQL подключения.
-	dsn := flag.String("dsn", "admin:dfyz10012003dfyz@/Candidates?parseTime=true", "Название MySQL источника данных")
-	// извлекаем флаг из командной строки
-	flag.Parse()
 	// создаем новый логер для вывода информационных сообщенйи в поток stdout c припиской info
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	//аналогично для логов с ошибками, такеж включим вывод фйла и номера  строки, где произошла ошибка
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+	configuration, err := decodeConfig("config.json")
+	if err != nil {
+		errorLog.Println(err)
+	}
+	bot, err := tgbotapi.NewBotAPI(configuration.TelegramBotToken)
+	if err != nil {
+		errorLog.Println(err)
+	}
+	// Определение нового флага из командной строки для настройки MySQL подключения.
+	dsn := flag.String("dsn", configuration.DbMysqlParams, "Название MySQL источника данных")
+	// извлекаем флаг из командной строки
+	flag.Parse()
 
 	db, err := openDB(*dsn)
 	if err != nil {
@@ -38,15 +47,6 @@ func main() {
 	defer db.Close()
 
 	// декодируем файл json, в котором хранится конфиг - токен бота
-
-	configuration, err := decodeConfig("config.json")
-	if err != nil {
-		errorLog.Println(err)
-	}
-	bot, err := tgbotapi.NewBotAPI(configuration.TelegramBotToken)
-	if err != nil {
-		errorLog.Println(err)
-	}
 
 	bot.Debug = true
 
