@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/Feof1l/TelegramHrBot/pkg/models"
+	"github.com/Feof1l/TelegramHrBot/pkg/models/mysql"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
@@ -12,14 +13,15 @@ var UserAgreement = "https://telegram.org/tos/ru" // сылка на польз�
 var MessageIdDic = make(map[int]int)
 
 type Bot struct {
-	bot      *tgbotapi.BotAPI
-	errorLog *log.Logger
-	infoLog  *log.Logger
+	bot        *tgbotapi.BotAPI
+	errorLog   *log.Logger
+	infoLog    *log.Logger
+	candidates *mysql.CandidatModel
 }
 
-func NewBot(bot *tgbotapi.BotAPI, errorLog *log.Logger, infoLog *log.Logger) *Bot {
+func NewBot(bot *tgbotapi.BotAPI, errorLog *log.Logger, infoLog *log.Logger, candidates *mysql.CandidatModel) *Bot {
 
-	return &Bot{bot: bot, errorLog: errorLog, infoLog: infoLog}
+	return &Bot{bot: bot, errorLog: errorLog, infoLog: infoLog, candidates: &mysql.CandidatModel{DB: candidates.DB}}
 }
 func (b *Bot) Start() error {
 
@@ -59,7 +61,9 @@ func (b *Bot) SendMsg(msg tgbotapi.MessageConfig) error {
 	return nil
 }
 func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
+	queryCandidat := models.Possible_candidate{}
 	queryPosition := models.Position{}
+	flagNameCandidate := false
 	for update := range updates {
 
 		if update.Message != nil && b.IsBlockedUser() { // потом переделать
@@ -73,10 +77,29 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 			case "start":
 				msg = tgbotapi.NewMessage(update.Message.Chat.ID, startMessage)
 				msg.ReplyMarkup = answerKeyBoard
+				b.SendMsg(msg)
 
 			}
-			b.SendMsg(msg)
+			if flagNameCandidate {
+				queryCandidat.Candidate_name = update.Message.Text
+				queryCandidat.Telegram_username = update.Message.Chat.UserName
+				/*
+					b.infoLog.Println(candidateName, update.Message.Chat.UserName)
+					err := b.candidates.Insert(candidateName, update.Message.Chat.UserName)
+					if err != nil {
+						b.errorLog.Println(err)
+					}*/
+				msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Приятно познакомиться!")
+				b.SendMsg(msg)
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Выберети специализацию, на которой хотите работать!")
+				b.SendMsg(msg)
+				msg = tgbotapi.NewMessage(update.Message.Chat.ID, choiseProfil)
 
+				msg.ReplyMarkup = choiseProfilKeyBoard
+
+				b.SendMsg(msg)
+
+			}
 			// Send the message.
 
 		} else if update.CallbackQuery != nil {
@@ -100,18 +123,19 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 			case "vacancy is not interesting", "another reason", "don't want to talk", "already found a job":
 				b.feedback(update.CallbackQuery)
 			case "Yes":
-				/*msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, StartDialogMessage)
+				flagNameCandidate = true
+				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Отлично! Для дальнейшего общения напишите, пожалуйста, мне свою фамилию и имя")
 				b.SendMsg(msg)
-				msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, EducationQuestion)
-				msg.ReplyMarkup = EducationKeyBoard
-				b.SendMsg(msg)*/
-				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Выберети специализацию, на которой хотите работать!")
-				b.SendMsg(msg)
-				msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, choiseProfil)
 
-				msg.ReplyMarkup = choiseProfilKeyBoard
+			/*case "Yes":
 
-				b.SendMsg(msg)
+			msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Выберети специализацию, на которой хотите работать!")
+			b.SendMsg(msg)
+			msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, choiseProfil)
+
+			msg.ReplyMarkup = choiseProfilKeyBoard
+
+			b.SendMsg(msg)*/
 			case "Golang backend - developer", "Java backend - developer":
 				queryPosition.Profil = update.CallbackQuery.Data
 				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Выберети позицию, на которой хотите работать!")
@@ -122,6 +146,11 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				b.SendMsg(msg)
 			case "Junior", "Middle", "Intern":
 				queryPosition.Position_name = update.CallbackQuery.Data
+				queryCandidat.Id_pos = DetermineId_pos(queryPosition.Profil, queryPosition.Position_name)
+				err := b.candidates.Insert(queryCandidat.Candidate_name, queryCandidat.Telegram_username, queryCandidat.Id_pos)
+				if err != nil {
+					b.errorLog.Println(err)
+				}
 
 			default:
 				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Пожалуйста,используйте кнопки для общения с ботом")

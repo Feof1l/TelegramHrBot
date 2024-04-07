@@ -37,5 +37,5 @@ type Possible_candidate struct {
 	Is_blocked_flag       bool
 	Ready_flag            bool
 	Fail_flag             bool
-	Id_pos                bool
+	Id_pos                int
 }

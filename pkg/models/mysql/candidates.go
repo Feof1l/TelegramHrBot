@@ -8,12 +8,34 @@ import (
 )
 
 // Определяем тип который обертывает пул подключения sql.DB
-type LinkModel struct {
+type CandidatModel struct {
 	DB *sql.DB
 }
 
-// Метод для создания новой заметки в базе дынных.
-func (m *LinkModel) Insert(education string) (int, error) {
+// Метод для создания записи заметки в базе дынных.
+func (m *CandidatModel) Insert(candidateName, telegramUsername string, Id_position int) error {
+	// Подготовка SQL-запроса для вставки данных в таблицу
+
+	//stmt := `INSERT INTO links (title,content,created,expires)
+	//VALUES (?,?,UTC_TIMESTAMP(),DATE_ADD(UTC_TIMESTAMP(),INTERVAL ? DAY))`
+	query := `INSERT INTO Possible_candidate (Candidate_name,Telegram_username,id_pos) VALUES (?,?,?)`
+
+	stmt, err := m.DB.Prepare(query)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	// Выполнение запроса с передачей параметров
+	_, err = stmt.Exec(candidateName, telegramUsername, Id_position)
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+
+/*func (m *LinkModel) Insert(education string) (int, error) {
 	//stmt := `INSERT INTO Possible_candidate (Candidate_name,Telegram_username,contact_number,Citizenship,Education,Work_experience,Hours,Work_format,Expected_salary,Ready_to_relocate,Date_of_dialog,Feadback,is_blocked_flag,ready_flag,fail_flag)
 	//VALUES (?,?,?,?,?,?,?,?,?,?)`
 	stmt := `INSERT INTO Possible_candidate (education)
@@ -28,10 +50,10 @@ func (m *LinkModel) Insert(education string) (int, error) {
 		return 0, err
 	}
 	return int(id), nil
-}
+}*/
 
 // Get - Метод для возвращения данных заметки по её идентификатору ID.
-func (m *LinkModel) Get(id int) (*models.Position, error) {
+func (m *CandidatModel) Get(id int) (*models.Position, error) {
 	stmt := `SELECT id_position,Position_name,Profil FROM position`
 
 	// Используем метод QueryRow() для выполнения SQL запроса,

@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/Feof1l/TelegramHrBot/pkg/models/mysql"
 	"github.com/Feof1l/TelegramHrBot/pkg/telegram"
 	_ "github.com/go-sql-driver/mysql"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -50,7 +51,7 @@ func main() {
 
 	bot.Debug = true
 
-	telegramBot := telegram.NewBot(bot, errorLog, infoLog)
+	telegramBot := telegram.NewBot(bot, errorLog, infoLog, &mysql.CandidatModel{DB: db})
 	func() {
 		if err := telegramBot.Start(); err != nil && !telegramBot.IsBlockedUser() { // потом переделать
 			errorLog.Println(err)

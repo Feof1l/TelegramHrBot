@@ -68,3 +68,13 @@ var noQuestionKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // // inline меню
 		tgbotapi.NewInlineKeyboardButtonData("Не хочу говорить", "don't want to talk"),
 	),
 )
+
+func DetermineId_pos(profil, position string) int {
+	if profil == "Golang backend - developer" && position == "Junior" {
+		return 1
+	} else if profil == "ava backend - developer" && position == "Middle" {
+		return 2
+	} else {
+		return 3
+	}
+}
