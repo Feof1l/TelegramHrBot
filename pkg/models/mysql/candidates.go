@@ -12,12 +12,10 @@ type CandidatModel struct {
 	DB *sql.DB
 }
 
-// Метод для создания записи заметки в базе дынных.
+// Метод для создания записи  в базе дынных.
 func (m *CandidatModel) Insert(candidateName, telegramUsername string, Id_position int) error {
 	// Подготовка SQL-запроса для вставки данных в таблицу
 
-	//stmt := `INSERT INTO links (title,content,created,expires)
-	//VALUES (?,?,UTC_TIMESTAMP(),DATE_ADD(UTC_TIMESTAMP(),INTERVAL ? DAY))`
 	query := `INSERT INTO Possible_candidate (Candidate_name,Telegram_username,id_pos) VALUES (?,?,?)`
 
 	stmt, err := m.DB.Prepare(query)
@@ -28,6 +26,26 @@ func (m *CandidatModel) Insert(candidateName, telegramUsername string, Id_positi
 
 	// Выполнение запроса с передачей параметров
 	_, err = stmt.Exec(candidateName, telegramUsername, Id_position)
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+
+// Метод для добавления дынных в существующую запись  в базе дынных.
+func (m *CandidatModel) Update(education string, candidateName string) error {
+	// Подготовка SQL-запроса для вставки данных в таблицу
+	query := `UPDATE Possible_candidate SET Education = ? WHERE Candidate_name = ?`
+
+	stmt, err := m.DB.Prepare(query)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	// Выполнение запроса с передачей параметров
+	_, err = stmt.Exec(education, candidateName)
 	if err != nil {
 		return err
 	}
@@ -75,42 +93,3 @@ func (m *CandidatModel) Get(id int) (*models.Position, error) {
 	}
 	return s, nil
 }
-
-/*
-// Latest - Метод возвращает 10 наиболее часто используемые заметки.
-func (m *LinkModel) Latest() ([]*models.Position, error) {
-	stmt := `SELECT id,title,content,created,expires FROM links
-	WHERE expires > UTC_TIMESTAMP() ORDER BY created DESC LIMIT 10`
-
-	rows, err := m.DB.Query(stmt)
-	if err != nil {
-		return nil, err
-	}
-
-	// Откладываем вызов rows.Close(), чтобы быть уверенным, что набор результатов из sql.Rows
-	// правильно закроется перед вызовом метода Latest(). Этот оператор откладывания
-	// должен выполнится *после* проверки на наличие ошибки в методе Query().
-	// В противном случае, если Query() вернет ошибку, это приведет к панике
-	// так как он попытается закрыть набор результатов у которого значение: n
-	defer rows.Close()
-
-	// Инициализируем пустой срез для хранения объектов models.Links
-	var links []*models.Link
-
-	// Используем rows.Next() для перебора результата. Этот метод предоставляем
-	// первый а затем каждую следующею запись из базы данных для обработки
-	// методом rows.Scan().
-	for rows.Next() {
-		s := &models.Link{}
-		err = rows.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
-		if err != nil {
-			return nil, err
-		}
-		links = append(links, s)
-	}
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-	return links, nil
-}
-*/

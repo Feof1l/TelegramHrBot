@@ -2,6 +2,7 @@ package telegram
 
 import tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 
+var UserAgreement = "https://telegram.org/tos/ru" // сылка на пользовательское соглашение
 var startMessage = `Привет! Я - HR бот.Сейчас задам тебе несколько вопросов. Если готов(а) продолжить общение со мной, жми "Да".
 Если выберешь "Да", соглашаешься с условиями обрабтки данных.Продолжим диалог? `
 
@@ -10,8 +11,8 @@ var startMessage = `Привет! Я - HR бот.Сейчас задам теб�
 var noQuestionMessage = `Хорошо, понял Вас! Пожалуйста,поделитесь со мной, что явялется причиной вашего отказа? Это поможет мне при последующем отборе
 кандидатов.`
 var startDialogMessage = `Отлично!Я очень рад!Тогда начнем наш диалог) `
-var educationQuestion = `Скажи,есть ли у тебя высшее техническое образование?`
-var choiseProfil = `Здравствуйте! На данный момент у нас открыт набор на следующие позиции:`
+var educationQuestion = `Какое у тебя образование Выбери подходящий вариант?`
+var choiseProfil = `Здравствуйте! На данный момент нам требуются следующие специалисты`
 
 var choiseProfilKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // // inline меню для сборе инофрмации об образовании
 	tgbotapi.NewInlineKeyboardRow(
@@ -23,23 +24,32 @@ var choiseProfilKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // // inline мен
 		tgbotapi.NewInlineKeyboardButtonData("Специалист DS", "middle data science"),
 	),
 )
-var choisePosition = `Здравствуйте! На данный момент у нас открыт набор на следующие позиции:`
+var choisePosition = `На данный момент у нас открыт набор на следующие позиции:`
 
 var choisePositionKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // // inline меню для сборе инофрмации об образовании
 	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Стажёр", "Intern"),
 		tgbotapi.NewInlineKeyboardButtonData("Junior", "Junior"),
-		tgbotapi.NewInlineKeyboardButtonData("Middle", "Middle"),
 	),
 	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Стажёр", "Intern"),
+		tgbotapi.NewInlineKeyboardButtonData("Middle", "Middle"),
+		tgbotapi.NewInlineKeyboardButtonData("Senior", "Senior"),
+	),
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Team Lead", "Team Lead"),
 	),
 )
 var educationKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // // inline меню для сборе инофрмации об образовании
 	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Да", "Have high technical education"),
+		tgbotapi.NewInlineKeyboardButtonData("Среднее", "Среднее"),
+		tgbotapi.NewInlineKeyboardButtonData("Неоконченное высшее", "Неоконченное высшее"),
 	),
 	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Нет", "Haven't high technical education"),
+		tgbotapi.NewInlineKeyboardButtonData("Высшее (бакалавриат)", "Бакалавр"),
+		tgbotapi.NewInlineKeyboardButtonData("Высшее (магистратура)", "Магистр"),
+	),
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Высшее (аспирантура)", "Кандидат наук"),
 	),
 )
 var answerKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // inline меню для начала общения

@@ -8,8 +8,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
-var BlockedUsers = make(map[string]bool)          // хэш мапа для хранения информации о заблокированных пользователях
-var UserAgreement = "https://telegram.org/tos/ru" // сылка на пользовательское соглашение
+var BlockedUsers = make(map[string]bool) // хэш мапа для хранения информации о заблокированных пользователях
 var MessageIdDic = make(map[int]int)
 
 type Bot struct {
@@ -144,10 +143,19 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				msg.ReplyMarkup = choisePositionKeyBoard
 
 				b.SendMsg(msg)
-			case "Junior", "Middle", "Intern":
+			case "Junior", "Middle", "Intern", "Senior", "Team Lead":
 				queryPosition.Position_name = update.CallbackQuery.Data
 				queryCandidat.Id_pos = DetermineId_pos(queryPosition.Profil, queryPosition.Position_name)
 				err := b.candidates.Insert(queryCandidat.Candidate_name, queryCandidat.Telegram_username, queryCandidat.Id_pos)
+				if err != nil {
+					b.errorLog.Println(err)
+				}
+				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, educationQuestion)
+				msg.ReplyMarkup = educationKeyBoard
+				b.SendMsg(msg)
+			case "Среднее", "Неоконченное высшее", "Бакалавр", "Магистр", "Кандидат наук":
+				queryCandidat.Education = update.CallbackQuery.Data
+				err := b.candidates.Update(queryCandidat.Education, queryCandidat.Candidate_name)
 				if err != nil {
 					b.errorLog.Println(err)
 				}

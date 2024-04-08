@@ -49,7 +49,7 @@ func main() {
 
 	// декодируем файл json, в котором хранится конфиг - токен бота
 
-	bot.Debug = true
+	bot.Debug = false
 
 	telegramBot := telegram.NewBot(bot, errorLog, infoLog, &mysql.CandidatModel{DB: db})
 	func() {
