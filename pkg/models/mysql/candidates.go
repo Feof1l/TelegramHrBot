@@ -35,6 +35,29 @@ func (m *CandidatModel) Insert(candidateName, telegramUsername string, Id_positi
 	return nil
 
 }
+
+// Запись фидбека после общения с ботом
+func (m *CandidatModel) InsertFeadBack(feadback string, id_possible_candidate int) error {
+	// Подготовка SQL-запроса для вставки данных в таблицу
+
+	query := `UPDATE Possible_candidate SET Feadback = ? WHERE id_possible_candidate = ?`
+
+	stmt, err := m.DB.Prepare(query)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	// Выполнение запроса с передачей параметров
+	_, err = stmt.Exec(feadback, id_possible_candidate)
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+
+// получение флага ошибки чтобы отснивать кандидатов
 func (m *CandidatModel) GetFailFlag(candidate_id int) (bool, error) {
 	var failFlag bool
 	if err := m.DB.QueryRow("SELECT fail_flag FROM Possible_candidate WHERE id_possible_candidate = ?", candidate_id).Scan(&failFlag); err != nil {
@@ -46,6 +69,8 @@ func (m *CandidatModel) GetFailFlag(candidate_id int) (bool, error) {
 	}
 	return failFlag, nil
 }
+
+// метод получения id по имени и нику
 func (m *CandidatModel) GetId(candidateName, telegramUsername string) (int, error) {
 	var id int
 	err := m.DB.QueryRow("SELECT id_possible_candidate FROM Possible_candidate WHERE (Candidate_name = ? AND Telegram_username = ?) ", candidateName, telegramUsername).Scan(&id)
@@ -57,6 +82,8 @@ func (m *CandidatModel) GetId(candidateName, telegramUsername string) (int, erro
 	}
 	return id, nil
 }
+
+// обёртка для вызова хранимой процедуры из БД
 func (m *CandidatModel) CallCompareEducation(position_id, possible_candidat_id int) error {
 	_, err := m.DB.Exec("CALL Compare_Education(?, ?)", position_id, possible_candidat_id)
 	if err != nil {

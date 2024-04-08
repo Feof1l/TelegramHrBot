@@ -34,6 +34,8 @@ func (b *Bot) Start() error {
 
 	return nil
 }
+
+// метод удаления всех сообщений
 func (b *Bot) clearChatHistory(chatID int64) error {
 	for key := range MessageIdDic {
 		msgToDelete := tgbotapi.DeleteMessageConfig{
@@ -50,6 +52,8 @@ func (b *Bot) clearChatHistory(chatID int64) error {
 
 	return nil
 }
+
+// обёртка для отправки сообщения ботом
 func (b *Bot) SendMsg(msg tgbotapi.MessageConfig) error {
 	sendMessage, err := b.bot.Send(msg)
 	if err != nil {
@@ -63,6 +67,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 	queryCandidat := models.Possible_candidate{}
 	queryPosition := models.Position{}
 	flagNameCandidate := false
+	flagFeedback := false
 	for update := range updates {
 
 		if update.Message != nil && b.IsBlockedUser() { // потом переделать
@@ -78,6 +83,11 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				msg.ReplyMarkup = answerKeyBoard
 				b.SendMsg(msg)
 
+			}
+			if flagFeedback {
+				if err := b.candidates.InsertFeadBack(update.Message.Text, queryCandidat.Id_possible_candidate); err != nil {
+					b.errorLog.Println(err)
+				}
 			}
 			if flagNameCandidate {
 				queryCandidat.Candidate_name = update.Message.Text
@@ -97,6 +107,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				msg.ReplyMarkup = choiseProfilKeyBoard
 
 				b.SendMsg(msg)
+				flagNameCandidate = false
 
 			}
 
@@ -177,6 +188,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 					b.SendMsg(msg)
 					msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, feedbackMessage)
 					b.SendMsg(msg)
+					flagFeedback = true
 				}
 
 			default:
