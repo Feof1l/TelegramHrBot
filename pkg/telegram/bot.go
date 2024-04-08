@@ -99,6 +99,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				b.SendMsg(msg)
 
 			}
+
 			// Send the message.
 
 		} else if update.CallbackQuery != nil {
@@ -166,6 +167,17 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 					b.errorLog.Println(err)
 				}
 				err = b.candidates.CallCompareEducation(queryCandidat.Id_pos, queryCandidat.Id_possible_candidate)
+				failFlag, err := b.candidates.GetFailFlag(id)
+				if err != nil {
+					b.errorLog.Println(err)
+				}
+				//b.infoLog.Println(failFlag)
+				if failFlag {
+					msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, failTrueMessage)
+					b.SendMsg(msg)
+					msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, feedbackMessage)
+					b.SendMsg(msg)
+				}
 
 			default:
 				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Пожалуйста,используйте кнопки для общения с ботом")

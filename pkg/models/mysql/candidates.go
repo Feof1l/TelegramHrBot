@@ -12,6 +12,8 @@ type CandidatModel struct {
 	DB *sql.DB
 }
 
+var ErrNoSuchRowInColumn = errors.New("Строка в таблице не найдена")
+
 // Метод для создания записи  в базе дынных.
 func (m *CandidatModel) Insert(candidateName, telegramUsername string, Id_position int) error {
 	// Подготовка SQL-запроса для вставки данных в таблицу
@@ -33,12 +35,22 @@ func (m *CandidatModel) Insert(candidateName, telegramUsername string, Id_positi
 	return nil
 
 }
+func (m *CandidatModel) GetFailFlag(candidate_id int) (bool, error) {
+	var failFlag bool
+	if err := m.DB.QueryRow("SELECT fail_flag FROM Possible_candidate WHERE id_possible_candidate = ?", candidate_id).Scan(&failFlag); err != nil {
+		if err == sql.ErrNoRows {
+			return false, ErrNoSuchRowInColumn
+		} else {
+			return false, err
+		}
+	}
+	return failFlag, nil
+}
 func (m *CandidatModel) GetId(candidateName, telegramUsername string) (int, error) {
 	var id int
 	err := m.DB.QueryRow("SELECT id_possible_candidate FROM Possible_candidate WHERE (Candidate_name = ? AND Telegram_username = ?) ", candidateName, telegramUsername).Scan(&id)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			ErrNoSuchRowInColumn := errors.New("нет такой строки в столбце")
 			return 0, ErrNoSuchRowInColumn
 		}
 		return 0, err
