@@ -155,10 +155,17 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				b.SendMsg(msg)
 			case "Среднее", "Неоконченное высшее", "Бакалавр", "Магистр", "Кандидат наук":
 				queryCandidat.Education = update.CallbackQuery.Data
-				err := b.candidates.Update(queryCandidat.Education, queryCandidat.Candidate_name)
+
+				id, err := b.candidates.GetId(queryCandidat.Candidate_name, queryCandidat.Telegram_username)
+				queryCandidat.Id_possible_candidate = id
 				if err != nil {
 					b.errorLog.Println(err)
 				}
+				err = b.candidates.Update(queryCandidat.Education, queryCandidat.Candidate_name)
+				if err != nil {
+					b.errorLog.Println(err)
+				}
+				err = b.candidates.CallCompareEducation(queryCandidat.Id_pos, queryCandidat.Id_possible_candidate)
 
 			default:
 				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Пожалуйста,используйте кнопки для общения с ботом")
@@ -170,6 +177,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 	}
 
 }
+
 func (b *Bot) feedback(CallbackQuery *tgbotapi.CallbackQuery) {
 	//логика добавления update.CallbackQuery.Data в БД
 	msg := tgbotapi.NewMessage(CallbackQuery.Message.Chat.ID, "Спасибо за обратную связь! Удачи!")

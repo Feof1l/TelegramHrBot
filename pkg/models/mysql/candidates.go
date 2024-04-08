@@ -16,7 +16,7 @@ type CandidatModel struct {
 func (m *CandidatModel) Insert(candidateName, telegramUsername string, Id_position int) error {
 	// Подготовка SQL-запроса для вставки данных в таблицу
 
-	query := `INSERT INTO Possible_candidate (Candidate_name,Telegram_username,id_pos) VALUES (?,?,?)`
+	query := `INSERT INTO Possible_candidate (Candidate_name,Telegram_username,id_pos,fail_flag) VALUES (?,?,?,?)`
 
 	stmt, err := m.DB.Prepare(query)
 	if err != nil {
@@ -25,12 +25,32 @@ func (m *CandidatModel) Insert(candidateName, telegramUsername string, Id_positi
 	defer stmt.Close()
 
 	// Выполнение запроса с передачей параметров
-	_, err = stmt.Exec(candidateName, telegramUsername, Id_position)
+	defaultFailFlag := false
+	_, err = stmt.Exec(candidateName, telegramUsername, Id_position, defaultFailFlag)
 	if err != nil {
 		return err
 	}
 	return nil
 
+}
+func (m *CandidatModel) GetId(candidateName, telegramUsername string) (int, error) {
+	var id int
+	err := m.DB.QueryRow("SELECT id_possible_candidate FROM Possible_candidate WHERE (Candidate_name = ? AND Telegram_username = ?) ", candidateName, telegramUsername).Scan(&id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ErrNoSuchRowInColumn := errors.New("нет такой строки в столбце")
+			return 0, ErrNoSuchRowInColumn
+		}
+		return 0, err
+	}
+	return id, nil
+}
+func (m *CandidatModel) CallCompareEducation(position_id, possible_candidat_id int) error {
+	_, err := m.DB.Exec("CALL Compare_Education(?, ?)", position_id, possible_candidat_id)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Метод для добавления дынных в существующую запись  в базе дынных.
