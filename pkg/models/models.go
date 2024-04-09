@@ -16,7 +16,7 @@ type Position struct {
 	Required_citizenship     string
 	Required_education       string
 	Required_hours           int
-	Required_experience      int
+	Required_experience      string
 	Required_to_relocate     bool
 	Required_work_format     string
 }
@@ -27,7 +27,7 @@ type Possible_candidate struct {
 	Contact_number        string
 	Citizenship           string
 	Education             string
-	Work_experience       int
+	Work_experience       string
 	Hours                 int
 	Work_format           string
 	Expected_salary       int

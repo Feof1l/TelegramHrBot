@@ -85,8 +85,13 @@ func (m *CandidatModel) GetId(candidateName, telegramUsername string) (int, erro
 }
 
 // обёртка для вызова хранимой процедуры из БД
-func (m *CandidatModel) CallCompareEducation(position_id, possible_candidat_id int) error {
-	_, err := m.DB.Exec("CALL Compare_Education(?, ?)", position_id, possible_candidat_id)
+func (m *CandidatModel) CallStoredProcedure(procedure_name string, position_id, possible_candidat_id int) error {
+	query := fmt.Sprintf("CALL %s(?, ?)", procedure_name)
+	stmt, err := m.DB.Prepare(query)
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(position_id, possible_candidat_id)
 	if err != nil {
 		return err
 	}

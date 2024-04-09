@@ -10,6 +10,7 @@ import (
 
 var BlockedUsers = make(map[string]bool) // хэш мапа для хранения информации о заблокированных пользователях
 var MessageIdDic = make(map[int]int)
+var flagFeedback = false
 
 type Bot struct {
 	bot        *tgbotapi.BotAPI
@@ -67,7 +68,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 	queryCandidat := models.Possible_candidate{}
 	queryPosition := models.Position{}
 	flagNameCandidate := false
-	flagFeedback := false
+
 	flagFeadbackAnotherReason := false
 	for update := range updates {
 
@@ -107,6 +108,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				b.SendMsg(msg)
 
 			}
+
 			if flagNameCandidate {
 				queryCandidat.Candidate_name = update.Message.Text
 				queryCandidat.Telegram_username = update.Message.Chat.UserName
@@ -185,7 +187,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 			b.SendMsg(msg)*/
 			case "Golang backend - developer", "Java backend - developer":
 				queryPosition.Profil = update.CallbackQuery.Data
-				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Выберети позицию, на которой хотите работать!")
+				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Выберите позицию, на которой хотите работать!")
 				b.SendMsg(msg)
 				msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, choisePosition)
 				msg.ReplyMarkup = choisePositionKeyBoard
@@ -213,18 +215,14 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				if err != nil {
 					b.errorLog.Println(err)
 				}
-				err = b.candidates.CallCompareEducation(queryCandidat.Id_pos, queryCandidat.Id_possible_candidate)
+				err = b.candidates.CallStoredProcedure("Compare_Education", queryCandidat.Id_pos, queryCandidat.Id_possible_candidate)
 				failFlag, err := b.candidates.GetFailFlag(id)
 				if err != nil {
 					b.errorLog.Println(err)
 				}
 				//b.infoLog.Println(failFlag)
 				if failFlag {
-					msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, failTrueMessage)
-					b.SendMsg(msg)
-					msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, feedbackMessage)
-					b.SendMsg(msg)
-					flagFeedback = true
+					b.failFlag(update)
 				}
 				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, citizenshipMessage)
 				msg.ReplyMarkup = citizenshipKeyBoard
@@ -236,9 +234,42 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				if err != nil {
 					b.errorLog.Println(err)
 				}
-				err = b.candidates.Update("Citizenship", queryCandidat.Education, queryCandidat.Id_possible_candidate)
+				err = b.candidates.Update("Citizenship", queryCandidat.Citizenship, queryCandidat.Id_possible_candidate)
 				if err != nil {
 					b.errorLog.Println(err)
+				}
+				err = b.candidates.CallStoredProcedure("Compare_Citizenship", queryCandidat.Id_pos, queryCandidat.Id_possible_candidate)
+				failFlag, err := b.candidates.GetFailFlag(id)
+				if err != nil {
+					b.errorLog.Println(err)
+				}
+
+				if failFlag {
+					b.failFlag(update)
+				}
+
+				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, workExperienceMessage)
+				msg.ReplyMarkup = workExperienceKeyBoard
+				b.SendMsg(msg)
+			case "Менее года", "1 - 3 года", "3 - 6 лет", "Более 6 лет":
+				queryCandidat.Work_experience = update.CallbackQuery.Data
+				id, err := b.candidates.GetId(queryCandidat.Candidate_name, queryCandidat.Telegram_username)
+				queryCandidat.Id_possible_candidate = id
+				if err != nil {
+					b.errorLog.Println(err)
+				}
+				err = b.candidates.Update("Work_experience", queryCandidat.Work_experience, queryCandidat.Id_possible_candidate)
+				if err != nil {
+					b.errorLog.Println(err)
+				}
+				err = b.candidates.CallStoredProcedure("Compare_Work_experience", queryCandidat.Id_pos, queryCandidat.Id_possible_candidate)
+				failFlag, err := b.candidates.GetFailFlag(id)
+				if err != nil {
+					b.errorLog.Println(err)
+				}
+
+				if failFlag {
+					b.failFlag(update)
 				}
 
 			default:
@@ -250,6 +281,13 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 		}
 	}
 
+}
+func (b *Bot) failFlag(update tgbotapi.Update) {
+	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, failTrueMessage)
+	b.SendMsg(msg)
+	msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, feedbackMessage)
+	b.SendMsg(msg)
+	flagFeedback = true
 }
 
 func (b *Bot) initUpdatesChannel() (tgbotapi.UpdatesChannel, error) {
