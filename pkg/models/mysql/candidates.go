@@ -3,6 +3,7 @@ package mysql
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/Feof1l/TelegramHrBot/pkg/models"
 )
@@ -93,9 +94,10 @@ func (m *CandidatModel) CallCompareEducation(position_id, possible_candidat_id i
 }
 
 // Метод для добавления дынных в существующую запись  в базе дынных.
-func (m *CandidatModel) Update(education string, candidateName string) error {
+func (m *CandidatModel) Update(field, data string, id int) error {
 	// Подготовка SQL-запроса для вставки данных в таблицу
-	query := `UPDATE Possible_candidate SET Education = ? WHERE Candidate_name = ?`
+	response := fmt.Sprintf(`UPDATE Possible_candidate SET %s = ? WHERE id_possible_candidate = ?`, field)
+	query := response
 
 	stmt, err := m.DB.Prepare(query)
 	if err != nil {
@@ -104,7 +106,7 @@ func (m *CandidatModel) Update(education string, candidateName string) error {
 	defer stmt.Close()
 
 	// Выполнение запроса с передачей параметров
-	_, err = stmt.Exec(education, candidateName)
+	_, err = stmt.Exec(data, id)
 	if err != nil {
 		return err
 	}

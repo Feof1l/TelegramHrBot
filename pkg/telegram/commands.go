@@ -20,6 +20,17 @@ var feedbackMessage = `Знаешь, мне было приятно с тобо�
 случай появления подходящих вакансий в компании.
 Надеюсь, и тебе было полезно со мной поговорить. Скажи, а что тебе понравилось при взаимодействии со мной?
 Напиши ответ в свободной форме`
+var citizenshipMessage = `Супер!Скажи, какое у тебя гражданство?`
+var citizenshipKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // // inline меню для сборе инофрмации о гражданстве
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("РФ", "РФ"),
+		tgbotapi.NewInlineKeyboardButtonData("РБ", "РБ"),
+	),
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("СНГ", "СНГ"),
+		tgbotapi.NewInlineKeyboardButtonData("Другое", "Другое"),
+	),
+)
 var choiseProfilKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // // inline меню для сборе инофрмации об образовании
 	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("Go-разработчик", "Golang backend - developer"),

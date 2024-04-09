@@ -209,7 +209,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				if err != nil {
 					b.errorLog.Println(err)
 				}
-				err = b.candidates.Update(queryCandidat.Education, queryCandidat.Candidate_name)
+				err = b.candidates.Update("Education", queryCandidat.Education, queryCandidat.Id_possible_candidate)
 				if err != nil {
 					b.errorLog.Println(err)
 				}
@@ -225,6 +225,20 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 					msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, feedbackMessage)
 					b.SendMsg(msg)
 					flagFeedback = true
+				}
+				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, citizenshipMessage)
+				msg.ReplyMarkup = citizenshipKeyBoard
+				b.SendMsg(msg)
+			case "РФ", "РБ", "СНГ", "Другое":
+				queryCandidat.Citizenship = update.CallbackQuery.Data
+				id, err := b.candidates.GetId(queryCandidat.Candidate_name, queryCandidat.Telegram_username)
+				queryCandidat.Id_possible_candidate = id
+				if err != nil {
+					b.errorLog.Println(err)
+				}
+				err = b.candidates.Update("Citizenship", queryCandidat.Education, queryCandidat.Id_possible_candidate)
+				if err != nil {
+					b.errorLog.Println(err)
 				}
 
 			default:
