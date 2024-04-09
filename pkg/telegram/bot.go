@@ -312,6 +312,31 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 					msg.ReplyMarkup = workFormatKeyBoard
 					b.SendMsg(msg)
 				}
+			case "Оффис", "Удаленка", "Гибрид":
+
+				queryCandidat.Work_format = update.CallbackQuery.Data
+				id, err := b.candidates.GetId(queryCandidat.Candidate_name, queryCandidat.Telegram_username)
+				queryCandidat.Id_possible_candidate = id
+				if err != nil {
+					b.errorLog.Println(err)
+				}
+				err = b.candidates.UpdateStringData("Work_format", queryCandidat.Work_format, queryCandidat.Id_possible_candidate)
+				if err != nil {
+					b.errorLog.Println(err)
+				}
+				err = b.candidates.CallStoredProcedure("Compare_work_format", queryCandidat.Id_pos, queryCandidat.Id_possible_candidate)
+				failFlag, err := b.candidates.GetFailFlag(id)
+				if err != nil {
+					b.errorLog.Println(err)
+				}
+
+				if failFlag {
+					b.failFlag(update)
+				} else {
+					msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, expectedSalaryMessage)
+
+					b.SendMsg(msg)
+				}
 
 			default:
 				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Пожалуйста,используйте кнопки для общения с ботом")
