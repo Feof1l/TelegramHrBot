@@ -2,6 +2,7 @@ package telegram
 
 import (
 	"log"
+	"strconv"
 
 	"github.com/Feof1l/TelegramHrBot/pkg/models"
 	"github.com/Feof1l/TelegramHrBot/pkg/models/mysql"
@@ -90,6 +91,9 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				if err := b.candidates.InsertFeadBack(update.Message.Text, queryCandidat.Id_possible_candidate); err != nil {
 					b.errorLog.Println(err)
 				}
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Спасибо за обратную связь! Удачи!")
+				b.SendMsg(msg)
+				flagFeedback = !flagFeedback
 			}
 			if flagFeadbackAnotherReason {
 
@@ -106,6 +110,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				}
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Спасибо за обратную связь! Удачи!")
 				b.SendMsg(msg)
+				flagFeadbackAnotherReason = !flagFeadbackAnotherReason
 
 			}
 
@@ -127,7 +132,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				msg.ReplyMarkup = choiseProfilKeyBoard
 
 				b.SendMsg(msg)
-				flagNameCandidate = false
+				flagNameCandidate = !flagNameCandidate
 
 			}
 
@@ -211,7 +216,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				if err != nil {
 					b.errorLog.Println(err)
 				}
-				err = b.candidates.Update("Education", queryCandidat.Education, queryCandidat.Id_possible_candidate)
+				err = b.candidates.UpdateStringData("Education", queryCandidat.Education, queryCandidat.Id_possible_candidate)
 				if err != nil {
 					b.errorLog.Println(err)
 				}
@@ -223,10 +228,12 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				//b.infoLog.Println(failFlag)
 				if failFlag {
 					b.failFlag(update)
+				} else {
+					msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, citizenshipMessage)
+					msg.ReplyMarkup = citizenshipKeyBoard
+					b.SendMsg(msg)
 				}
-				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, citizenshipMessage)
-				msg.ReplyMarkup = citizenshipKeyBoard
-				b.SendMsg(msg)
+
 			case "РФ", "РБ", "СНГ", "Другое":
 				queryCandidat.Citizenship = update.CallbackQuery.Data
 				id, err := b.candidates.GetId(queryCandidat.Candidate_name, queryCandidat.Telegram_username)
@@ -234,7 +241,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				if err != nil {
 					b.errorLog.Println(err)
 				}
-				err = b.candidates.Update("Citizenship", queryCandidat.Citizenship, queryCandidat.Id_possible_candidate)
+				err = b.candidates.UpdateStringData("Citizenship", queryCandidat.Citizenship, queryCandidat.Id_possible_candidate)
 				if err != nil {
 					b.errorLog.Println(err)
 				}
@@ -246,11 +253,12 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 
 				if failFlag {
 					b.failFlag(update)
+				} else {
+					msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, workExperienceMessage)
+					msg.ReplyMarkup = workExperienceKeyBoard
+					b.SendMsg(msg)
 				}
 
-				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, workExperienceMessage)
-				msg.ReplyMarkup = workExperienceKeyBoard
-				b.SendMsg(msg)
 			case "Менее года", "1 - 3 года", "3 - 6 лет", "Более 6 лет":
 				queryCandidat.Work_experience = update.CallbackQuery.Data
 				id, err := b.candidates.GetId(queryCandidat.Candidate_name, queryCandidat.Telegram_username)
@@ -258,7 +266,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				if err != nil {
 					b.errorLog.Println(err)
 				}
-				err = b.candidates.Update("Work_experience", queryCandidat.Work_experience, queryCandidat.Id_possible_candidate)
+				err = b.candidates.UpdateStringData("Work_experience", queryCandidat.Work_experience, queryCandidat.Id_possible_candidate)
 				if err != nil {
 					b.errorLog.Println(err)
 				}
@@ -270,6 +278,39 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 
 				if failFlag {
 					b.failFlag(update)
+				} else {
+					msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, hoursMessage)
+					msg.ReplyMarkup = hoursKeyBoard
+					b.SendMsg(msg)
+				}
+
+			case "20", "30", "40":
+				hours, err := strconv.Atoi(update.CallbackQuery.Data)
+				if err != nil {
+					b.errorLog.Println(err)
+				}
+				queryCandidat.Hours = hours
+				id, err := b.candidates.GetId(queryCandidat.Candidate_name, queryCandidat.Telegram_username)
+				queryCandidat.Id_possible_candidate = id
+				if err != nil {
+					b.errorLog.Println(err)
+				}
+				err = b.candidates.UpdateIntData("Hours", queryCandidat.Hours, queryCandidat.Id_possible_candidate)
+				if err != nil {
+					b.errorLog.Println(err)
+				}
+				err = b.candidates.CallStoredProcedure("Compare_hours", queryCandidat.Id_pos, queryCandidat.Id_possible_candidate)
+				failFlag, err := b.candidates.GetFailFlag(id)
+				if err != nil {
+					b.errorLog.Println(err)
+				}
+
+				if failFlag {
+					b.failFlag(update)
+				} else {
+					msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, workFormatMessage)
+					msg.ReplyMarkup = workFormatKeyBoard
+					b.SendMsg(msg)
 				}
 
 			default:

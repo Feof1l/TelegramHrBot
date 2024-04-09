@@ -99,7 +99,26 @@ func (m *CandidatModel) CallStoredProcedure(procedure_name string, position_id, 
 }
 
 // Метод для добавления дынных в существующую запись  в базе дынных.
-func (m *CandidatModel) Update(field, data string, id int) error {
+func (m *CandidatModel) UpdateStringData(field, data string, id int) error {
+	// Подготовка SQL-запроса для вставки данных в таблицу
+	response := fmt.Sprintf(`UPDATE Possible_candidate SET %s = ? WHERE id_possible_candidate = ?`, field)
+	query := response
+
+	stmt, err := m.DB.Prepare(query)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	// Выполнение запроса с передачей параметров
+	_, err = stmt.Exec(data, id)
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+func (m *CandidatModel) UpdateIntData(field string, data, id int) error {
 	// Подготовка SQL-запроса для вставки данных в таблицу
 	response := fmt.Sprintf(`UPDATE Possible_candidate SET %s = ? WHERE id_possible_candidate = ?`, field)
 	query := response
