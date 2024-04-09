@@ -72,16 +72,16 @@ var answerKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // inline меню для
 )
 var noQuestionKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // // inline меню для сборе инофрмации о причинах отказа общаться с ботом
 	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Вакансия неинтересна", "vacancy is not interesting"),
+		tgbotapi.NewInlineKeyboardButtonData("Вакансия неинтересна", "Вакансия неинтересна"),
 	),
 	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Уже нашел работу", "already found a job"),
+		tgbotapi.NewInlineKeyboardButtonData("Уже нашел работу", "Уже нашел работу"),
 	),
 	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Другая причина", "another reason"),
+		tgbotapi.NewInlineKeyboardButtonData("Другая причина", "Другая причина"),
 	),
 	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Не хочу говорить", "don't want to talk"),
+		tgbotapi.NewInlineKeyboardButtonData("Не хочу говорить", "Не хочу говорить"),
 	),
 )
 

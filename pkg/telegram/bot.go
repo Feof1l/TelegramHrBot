@@ -68,6 +68,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 	queryPosition := models.Position{}
 	flagNameCandidate := false
 	flagFeedback := false
+	flagFeadbackAnotherReason := false
 	for update := range updates {
 
 		if update.Message != nil && b.IsBlockedUser() { // потом переделать
@@ -88,6 +89,23 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				if err := b.candidates.InsertFeadBack(update.Message.Text, queryCandidat.Id_possible_candidate); err != nil {
 					b.errorLog.Println(err)
 				}
+			}
+			if flagFeadbackAnotherReason {
+
+				err := b.candidates.Insert(update.Message.Chat.UserName, update.Message.Chat.UserName, 1)
+				if err != nil {
+					b.errorLog.Println(err)
+				}
+				id, err := b.candidates.GetId(update.Message.Chat.UserName, update.Message.Chat.UserName)
+				if err != nil {
+					b.errorLog.Println(err)
+				}
+				if err = b.candidates.InsertFeadBack(update.Message.Text, id); err != nil {
+					b.errorLog.Println(err)
+				}
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Спасибо за обратную связь! Удачи!")
+				b.SendMsg(msg)
+
 			}
 			if flagNameCandidate {
 				queryCandidat.Candidate_name = update.Message.Text
@@ -130,9 +148,27 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 
 				msg.ReplyMarkup = noQuestionKeyBoard
 				b.SendMsg(msg)
+			case "Вакансия неинтересна", "Не хочу говорить", "Уже нашел работу":
 
-			case "vacancy is not interesting", "another reason", "don't want to talk", "already found a job":
-				b.feedback(update.CallbackQuery)
+				err := b.candidates.Insert(update.CallbackQuery.Message.Chat.UserName, update.CallbackQuery.Message.Chat.UserName, 1)
+				if err != nil {
+					b.errorLog.Println(err)
+				}
+				id, err := b.candidates.GetId(update.CallbackQuery.Message.Chat.UserName, update.CallbackQuery.Message.Chat.UserName)
+				if err != nil {
+					b.errorLog.Println(err)
+				}
+				if err := b.candidates.InsertFeadBack(update.CallbackQuery.Data, id); err != nil {
+					b.errorLog.Println(err)
+				}
+				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Спасибо за обратную связь! Удачи!")
+				b.SendMsg(msg)
+
+			case "Другая причина":
+				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Пожалуйста,напишите мне, почему Вы не хотите со мной общаться")
+				b.SendMsg(msg)
+				flagFeadbackAnotherReason = true
+
 			case "Yes":
 				flagNameCandidate = true
 				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Отлично! Для дальнейшего общения напишите, пожалуйста, мне свою фамилию и имя")
@@ -202,12 +238,6 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 
 }
 
-func (b *Bot) feedback(CallbackQuery *tgbotapi.CallbackQuery) {
-	//логика добавления update.CallbackQuery.Data в БД
-	msg := tgbotapi.NewMessage(CallbackQuery.Message.Chat.ID, "Спасибо за обратную связь! Удачи!")
-	b.SendMsg(msg)
-
-}
 func (b *Bot) initUpdatesChannel() (tgbotapi.UpdatesChannel, error) {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
