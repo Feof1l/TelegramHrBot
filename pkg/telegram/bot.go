@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"strconv"
+	"time"
 
 	"github.com/Feof1l/TelegramHrBot/pkg/models"
 	"github.com/Feof1l/TelegramHrBot/pkg/models/mysql"
@@ -123,6 +124,14 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 					if err != nil {
 						b.errorLog.Println(err)
 					}*/
+
+				currentTime := time.Now()
+				currentTimetring, _ := time.Parse("02-Jan-2006", currentTime.String())
+				queryCandidat.Date_of_dialog = currentTimetring
+				if err := b.candidates.UpdateTimeData("Date_of_dialog", queryCandidat.Date_of_dialog, queryCandidat.Id_possible_candidate); err != nil {
+					b.errorLog.Println(err)
+				}
+
 				msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Приятно познакомиться!")
 				b.SendMsg(msg)
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Выберети специализацию, на которой хотите работать!")
