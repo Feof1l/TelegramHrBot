@@ -141,11 +141,14 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 					b.errorLog.Println(ErrUncorrectSalary)
 					msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Зарплата указана некорректно!Пожалуйста, введите число")
 					b.SendMsg(msg)
+
 				} else {
 					msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Вы рассчитываете на зарплату:"+strconv.Itoa(queryCandidat.Expected_salary)+", так?")
 					msg.ReplyMarkup = salaryKeyBoard
 					b.SendMsg(msg)
+					flagExpectedSalary = !flagExpectedSalary
 				}
+
 			}
 
 			// Send the message.
@@ -357,6 +360,49 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 					b.errorLog.Println(err)
 				}
 				b.candidates.UpdateIntData("Expected_salary", queryCandidat.Expected_salary, queryCandidat.Id_possible_candidate)
+				err = b.candidates.CallStoredProcedure("Compare_Salary", queryCandidat.Id_pos, queryCandidat.Id_possible_candidate)
+				failFlag, err := b.candidates.GetFailFlag(id)
+				if err != nil {
+					b.errorLog.Println(err)
+				}
+
+				if failFlag {
+					b.failFlag(update)
+				} else {
+					msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, readyToRelocateMessage)
+					msg.ReplyMarkup = readyToRelocateKeyBoard
+					b.SendMsg(msg)
+				}
+			case "Uncorrect salary":
+				flagExpectedSalary = true
+				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, expectedSalaryMessage)
+				b.SendMsg(msg)
+			case "Ready to relocate", "Not ready to relocate":
+				if update.CallbackQuery.Data == "Ready to relocate" {
+					queryCandidat.Ready_to_relocate = true
+				} else {
+					queryCandidat.Ready_to_relocate = false
+				}
+				id, err := b.candidates.GetId(queryCandidat.Candidate_name, queryCandidat.Telegram_username)
+				queryCandidat.Id_possible_candidate = id
+				if err != nil {
+					b.errorLog.Println(err)
+				}
+				b.candidates.UpdateBoolData("Ready_to_relocate", queryCandidat.Ready_to_relocate, queryCandidat.Id_possible_candidate)
+				err = b.candidates.CallStoredProcedure("Compare_relocation", queryCandidat.Id_pos, queryCandidat.Id_possible_candidate)
+				failFlag, err := b.candidates.GetFailFlag(id)
+				if err != nil {
+					b.errorLog.Println(err)
+				}
+
+				if failFlag {
+					b.failFlag(update)
+				} else {
+					msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Лады, подходишь нам, кидаем оффер")
+
+					b.SendMsg(msg)
+				}
+
 			default:
 				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Пожалуйста,используйте кнопки для общения с ботом")
 				b.SendMsg(msg)

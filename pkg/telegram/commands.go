@@ -3,13 +3,41 @@ package telegram
 import tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 
 var UserAgreement = "https://telegram.org/tos/ru" // сылка на пользовательское соглашение
+
 var startMessage = `Привет! Я - HR бот.Сейчас задам тебе несколько вопросов. Если готов(а) продолжить общение со мной, жми "Да".
 Если выберешь "Да", соглашаешься с условиями обрабтки данных.Продолжим диалог? `
+
+var answerKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // inline меню для начала общения
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Да", "Yes"),
+		tgbotapi.NewInlineKeyboardButtonData("Нет", "No"),
+	),
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Заблокировать", "Block"),
+	),
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonURL("Пользовательское соглашение", UserAgreement),
+	),
+)
+
+var readyToRelocateMessage = `Хорошо, а подскажи, готов ли ты к командировкам, переездам?`
+
+var readyToRelocateKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // // inline меню для сборе инофрмации о командировках
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Готов", "Ready to relocate"),
+	),
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Не готов", "Not ready to relocate"),
+	),
+)
 
 // var banMessage = "Вы заблокировали бота @PMIIHrBot"
 // var warningBanMessage = "Вы не можете заблокировать других ботов"
 var noQuestionMessage = `Хорошо, понял тебя! Пожалуйста,поделись со мной, что явялется причиной твоего отказа? Это поможет мне при последующем отборе
 кандидатов.`
+
+var expectedSalaryMessage = `Я тебя понял! На какую зарплаты ты расчитываешь?`
+
 var salaryKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // // inline меню для сборе инофрмации о зарплате
 	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("Да,все верно", "Correct salary"),
@@ -28,7 +56,7 @@ var feedbackMessage = `Знаешь, мне было приятно с тобо�
 случай появления подходящих вакансий в компании.
 Надеюсь, и тебе было полезно со мной поговорить. Скажи, а что тебе понравилось при взаимодействии со мной?
 Напиши ответ в свободной форме`
-var expectedSalaryMessage = `Я тебя понял! На какую зарплаты ты расчитываешь?`
+
 var workFormatMessage = `Нам подходит! А какой формат работы ты хочешь?`
 var workFormatKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // // inline меню для сборе инофрмации о формате работы
 	tgbotapi.NewInlineKeyboardRow(
@@ -113,18 +141,7 @@ var educationKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // // inline меню 
 		tgbotapi.NewInlineKeyboardButtonData("Высшее (аспирантура)", "Кандидат наук"),
 	),
 )
-var answerKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // inline меню для начала общения
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Да", "Yes"),
-		tgbotapi.NewInlineKeyboardButtonData("Нет", "No"),
-	),
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Заблокировать", "Block"),
-	),
-	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonURL("Пользовательское соглашение", UserAgreement),
-	),
-)
+
 var noQuestionKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // // inline меню для сборе инофрмации о причинах отказа общаться с ботом
 	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("Вакансия неинтересна", "Вакансия неинтересна"),
