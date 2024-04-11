@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"errors"
 	"log"
 	"strconv"
 
@@ -19,6 +20,8 @@ type Bot struct {
 	infoLog    *log.Logger
 	candidates *mysql.CandidatModel
 }
+
+var ErrUncorrectSalary = errors.New("Зарплата указана некорректно")
 
 func NewBot(bot *tgbotapi.BotAPI, errorLog *log.Logger, infoLog *log.Logger, candidates *mysql.CandidatModel) *Bot {
 
@@ -69,6 +72,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 	queryCandidat := models.Possible_candidate{}
 	queryPosition := models.Position{}
 	flagNameCandidate := false
+	flagExpectedSalary := false
 
 	flagFeadbackAnotherReason := false
 	for update := range updates {
@@ -87,16 +91,15 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				b.SendMsg(msg)
 
 			}
-			if flagFeedback {
+			switch {
+			case flagFeedback:
 				if err := b.candidates.InsertFeadBack(update.Message.Text, queryCandidat.Id_possible_candidate); err != nil {
 					b.errorLog.Println(err)
 				}
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Спасибо за обратную связь! Удачи!")
 				b.SendMsg(msg)
 				flagFeedback = !flagFeedback
-			}
-			if flagFeadbackAnotherReason {
-
+			case flagFeadbackAnotherReason:
 				err := b.candidates.Insert(update.Message.Chat.UserName, update.Message.Chat.UserName, 1)
 				if err != nil {
 					b.errorLog.Println(err)
@@ -111,10 +114,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Спасибо за обратную связь! Удачи!")
 				b.SendMsg(msg)
 				flagFeadbackAnotherReason = !flagFeadbackAnotherReason
-
-			}
-
-			if flagNameCandidate {
+			case flagNameCandidate:
 				queryCandidat.Candidate_name = update.Message.Text
 				queryCandidat.Telegram_username = update.Message.Chat.UserName
 				/*
@@ -133,7 +133,19 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 
 				b.SendMsg(msg)
 				flagNameCandidate = !flagNameCandidate
-
+			case flagExpectedSalary:
+				expectedSalaryString := update.Message.Text
+				expectedSalaryInt, err := strconv.Atoi(expectedSalaryString)
+				queryCandidat.Expected_salary = expectedSalaryInt
+				if err != nil || queryCandidat.Expected_salary <= 0 {
+					b.errorLog.Println(ErrUncorrectSalary)
+					msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Зарплата указана некорректно!Пожалуйста, введите число")
+					b.SendMsg(msg)
+				} else {
+					msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Вы рассчитываете на зарплату:"+strconv.Itoa(queryCandidat.Expected_salary)+", так?")
+					msg.ReplyMarkup = salaryKeyBoard
+					b.SendMsg(msg)
+				}
 			}
 
 			// Send the message.
@@ -336,8 +348,15 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 					msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, expectedSalaryMessage)
 
 					b.SendMsg(msg)
+					flagExpectedSalary = true
 				}
-
+			case "Correct salary":
+				id, err := b.candidates.GetId(queryCandidat.Candidate_name, queryCandidat.Telegram_username)
+				queryCandidat.Id_possible_candidate = id
+				if err != nil {
+					b.errorLog.Println(err)
+				}
+				b.candidates.UpdateIntData("Expected_salary", queryCandidat.Expected_salary, queryCandidat.Id_possible_candidate)
 			default:
 				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Пожалуйста,используйте кнопки для общения с ботом")
 				b.SendMsg(msg)
