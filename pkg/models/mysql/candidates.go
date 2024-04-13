@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/Feof1l/TelegramHrBot/pkg/models"
 )
@@ -139,25 +138,6 @@ func (m *CandidatModel) UpdateBoolData(field string, data bool, id int) error {
 
 }
 func (m *CandidatModel) UpdateIntData(field string, data, id int) error {
-	// Подготовка SQL-запроса для вставки данных в таблицу
-	response := fmt.Sprintf(`UPDATE Possible_candidate SET %s = ? WHERE id_possible_candidate = ?`, field)
-	query := response
-
-	stmt, err := m.DB.Prepare(query)
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-
-	// Выполнение запроса с передачей параметров
-	_, err = stmt.Exec(data, id)
-	if err != nil {
-		return err
-	}
-	return nil
-
-}
-func (m *CandidatModel) UpdateTimeData(field string, data time.Time, id int) error {
 	// Подготовка SQL-запроса для вставки данных в таблицу
 	response := fmt.Sprintf(`UPDATE Possible_candidate SET %s = ? WHERE id_possible_candidate = ?`, field)
 	query := response

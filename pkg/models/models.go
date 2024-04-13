@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"time"
 )
 
 var ErrNoRecord = errors.New("models: подходящей записи не найдено")
@@ -32,7 +31,7 @@ type Possible_candidate struct {
 	Work_format           string
 	Expected_salary       int
 	Ready_to_relocate     bool
-	Date_of_dialog        time.Time
+	Date_of_dialog        string
 	Feadback              string
 	Is_blocked_flag       bool
 	Ready_flag            bool

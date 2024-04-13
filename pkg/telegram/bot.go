@@ -125,13 +125,6 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 						b.errorLog.Println(err)
 					}*/
 
-				currentTime := time.Now()
-				currentTimetring, _ := time.Parse("02-Jan-2006", currentTime.String())
-				queryCandidat.Date_of_dialog = currentTimetring
-				if err := b.candidates.UpdateTimeData("Date_of_dialog", queryCandidat.Date_of_dialog, queryCandidat.Id_possible_candidate); err != nil {
-					b.errorLog.Println(err)
-				}
-
 				msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Приятно познакомиться!")
 				b.SendMsg(msg)
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Выберети специализацию, на которой хотите работать!")
@@ -229,6 +222,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				if err != nil {
 					b.errorLog.Println(err)
 				}
+
 				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, educationQuestion)
 				msg.ReplyMarkup = educationKeyBoard
 				b.SendMsg(msg)
@@ -240,6 +234,16 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				if err != nil {
 					b.errorLog.Println(err)
 				}
+
+				currentTime := time.Now()
+				currentTimetring := currentTime.Format("02.01.2006")
+				queryCandidat.Date_of_dialog = currentTimetring
+				b.infoLog.Println(queryCandidat.Date_of_dialog)
+				err = b.candidates.UpdateStringData("Date_of_dialog", queryCandidat.Date_of_dialog, queryCandidat.Id_possible_candidate)
+				if err != nil {
+					b.errorLog.Println(err)
+				}
+
 				err = b.candidates.UpdateStringData("Education", queryCandidat.Education, queryCandidat.Id_possible_candidate)
 				if err != nil {
 					b.errorLog.Println(err)
