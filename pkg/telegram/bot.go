@@ -23,6 +23,7 @@ type Bot struct {
 }
 
 var ErrUncorrectSalary = errors.New("Зарплата указана некорректно")
+var ErrUncorrectContactNumber = errors.New("Контактный номер указан некорректно!")
 
 func NewBot(bot *tgbotapi.BotAPI, errorLog *log.Logger, infoLog *log.Logger, candidates *mysql.CandidatModel) *Bot {
 
@@ -74,6 +75,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 	queryPosition := models.Position{}
 	flagNameCandidate := false
 	flagExpectedSalary := false
+	flagContactNumber := false
 
 	flagFeadbackAnotherReason := false
 	for update := range updates {
@@ -127,7 +129,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 
 				msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Приятно познакомиться!")
 				b.SendMsg(msg)
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Выберети специализацию, на которой хотите работать!")
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, choiseProfilMessage)
 				b.SendMsg(msg)
 				msg = tgbotapi.NewMessage(update.Message.Chat.ID, choiseProfil)
 
@@ -150,7 +152,19 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 					b.SendMsg(msg)
 					flagExpectedSalary = !flagExpectedSalary
 				}
-
+			case flagContactNumber:
+				contactNumberString := update.Message.Text
+				queryCandidat.Contact_number = contactNumberString
+				if !isValidPhoneNumber(contactNumberString) {
+					b.errorLog.Println(ErrUncorrectContactNumber)
+					msg = tgbotapi.NewMessage(update.Message.Chat.ID, `Номер указан некорректно!Пожалуйста, введите номер в одном из форматов:"8xxxxxxxxxx", "+7xxxxxxxxxx", "8 (xxx) xxx-xx-xx", "+7 xxx xxx-xx-xx" `)
+					b.SendMsg(msg)
+				} else {
+					msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Вы указали свой номер телефона:"+queryCandidat.Contact_number+", так?")
+					msg.ReplyMarkup = contactNumberKeyBoard
+					b.SendMsg(msg)
+					flagContactNumber = !flagContactNumber
+				}
 			}
 
 			// Send the message.
@@ -195,7 +209,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 
 			case "Yes":
 				flagNameCandidate = true
-				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Отлично! Для дальнейшего общения напишите, пожалуйста, мне свою фамилию и имя")
+				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, candidateNameMessage)
 				b.SendMsg(msg)
 
 			/*case "Yes":
@@ -209,7 +223,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 			b.SendMsg(msg)*/
 			case "Golang backend - developer", "Java backend - developer":
 				queryPosition.Profil = update.CallbackQuery.Data
-				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Выберите позицию, на которой хотите работать!")
+				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, choisePositionMessage)
 				b.SendMsg(msg)
 				msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, choisePosition)
 				msg.ReplyMarkup = choisePositionKeyBoard
@@ -411,10 +425,33 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				if failFlag {
 					b.failFlag(update)
 				} else {
-					msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Лады, подходишь нам, кидаем оффер")
+					err := b.candidates.UpdateBoolData("ready_flag", true, id)
+					if err != nil {
+						b.errorLog.Println(err)
+					} else {
+						msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, goodResultMessage)
 
-					b.SendMsg(msg)
+						b.SendMsg(msg)
+
+						msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, contactNumberMessage)
+						flagContactNumber = true
+						b.SendMsg(msg)
+
+					}
+
 				}
+			case "Correct number":
+				id, err := b.candidates.GetId(queryCandidat.Candidate_name, queryCandidat.Telegram_username)
+				queryCandidat.Id_possible_candidate = id
+				if err != nil {
+					b.errorLog.Println(err)
+				}
+				b.candidates.UpdateStringData("Contact_number", queryCandidat.Contact_number, queryCandidat.Id_possible_candidate)
+
+			case "Uncorrect number":
+				flagContactNumber = true
+				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, contactNumberMessage)
+				b.SendMsg(msg)
 
 			default:
 				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Пожалуйста,используйте кнопки для общения с ботом")

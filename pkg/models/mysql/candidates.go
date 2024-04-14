@@ -19,7 +19,7 @@ var ErrNoSuchRowInColumn = errors.New("Строка в таблице не на�
 func (m *CandidatModel) Insert(candidateName, telegramUsername string, Id_position int) error {
 	// Подготовка SQL-запроса для вставки данных в таблицу
 
-	query := `INSERT INTO Possible_candidate (Candidate_name,Telegram_username,id_pos,fail_flag) VALUES (?,?,?,?)`
+	query := `INSERT INTO Possible_candidate (Candidate_name,Telegram_username,id_pos,fail_flag,ready_flag) VALUES (?,?,?,?,?)`
 
 	stmt, err := m.DB.Prepare(query)
 	if err != nil {
@@ -28,8 +28,8 @@ func (m *CandidatModel) Insert(candidateName, telegramUsername string, Id_positi
 	defer stmt.Close()
 
 	// Выполнение запроса с передачей параметров
-	defaultFailFlag := false
-	_, err = stmt.Exec(candidateName, telegramUsername, Id_position, defaultFailFlag)
+	defaultFlag := false
+	_, err = stmt.Exec(candidateName, telegramUsername, Id_position, defaultFlag, defaultFlag)
 	if err != nil {
 		return err
 	}
@@ -118,6 +118,7 @@ func (m *CandidatModel) UpdateStringData(field, data string, id int) error {
 	return nil
 
 }
+
 func (m *CandidatModel) UpdateBoolData(field string, data bool, id int) error {
 	// Подготовка SQL-запроса для вставки данных в таблицу
 	response := fmt.Sprintf(`UPDATE Possible_candidate SET %s = ? WHERE id_possible_candidate = ?`, field)
