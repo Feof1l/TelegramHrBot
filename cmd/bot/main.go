@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"flag"
 	"log"
 	"os"
@@ -13,18 +12,13 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
-type Config struct {
-	TelegramBotToken string
-	DbMysqlParams    string
-}
-
 func main() {
 
 	// создаем новый логер для вывода информационных сообщенйи в поток stdout c припиской info
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	//аналогично для логов с ошибками, такеж включим вывод фйла и номера  строки, где произошла ошибка
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
-	configuration, err := decodeConfig("config.json")
+	configuration, err := telegram.DecodeConfig("config.json")
 	if err != nil {
 		errorLog.Println(err)
 	}
@@ -39,7 +33,7 @@ func main() {
 
 	db, err := openDB(*dsn)
 	if err != nil {
-		errorLog.Fatal(err)
+		errorLog.Println(err)
 	}
 
 	// Мы также откладываем вызов db.Close(), чтобы пул соединений был закрыт
@@ -53,7 +47,7 @@ func main() {
 
 	telegramBot := telegram.NewBot(bot, errorLog, infoLog, &mysql.CandidatModel{DB: db})
 	func() {
-		if err := telegramBot.Start(); err != nil && !telegramBot.IsBlockedUser() { // потом переделать
+		if err := telegramBot.Start(); err != nil {
 			errorLog.Println(err)
 		}
 	}()
@@ -61,13 +55,7 @@ func main() {
 	////////////////////////
 
 }
-func decodeConfig(fileName string) (Config, error) {
-	file, _ := os.Open(fileName)
-	decoder := json.NewDecoder(file)
-	configuration := Config{}
-	err := decoder.Decode(&configuration)
-	return configuration, err
-}
+
 func openDB(dsn string) (*sql.DB, error) {
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {

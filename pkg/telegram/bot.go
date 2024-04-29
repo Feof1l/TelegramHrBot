@@ -37,7 +37,7 @@ func (b *Bot) Start() error {
 	if err != nil {
 		return err
 	}
-	b.handleUpdates(updates)
+	b.HandleUpdates(updates)
 
 	return nil
 }
@@ -70,7 +70,7 @@ func (b *Bot) SendMsg(msg tgbotapi.MessageConfig) error {
 	MessageIdDic[sendMessage.MessageID]++
 	return nil
 }
-func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
+func (b *Bot) HandleUpdates(updates tgbotapi.UpdatesChannel) {
 	queryCandidat := models.Possible_candidate{}
 	queryPosition := models.Position{}
 	flagNameCandidate := false
@@ -263,7 +263,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 					b.errorLog.Println(err)
 				}
 				err = b.candidates.CallStoredProcedure("Compare_Education", queryCandidat.Id_pos, queryCandidat.Id_possible_candidate)
-				failFlag, err := b.candidates.GetFailFlag(id)
+				failFlag, err := b.candidates.GetFlag("Fail_flag", id)
 				if err != nil {
 					b.errorLog.Println(err)
 				}
@@ -288,7 +288,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 					b.errorLog.Println(err)
 				}
 				err = b.candidates.CallStoredProcedure("Compare_Citizenship", queryCandidat.Id_pos, queryCandidat.Id_possible_candidate)
-				failFlag, err := b.candidates.GetFailFlag(id)
+				failFlag, err := b.candidates.GetFlag("Fail_flag", id)
 				if err != nil {
 					b.errorLog.Println(err)
 				}
@@ -313,7 +313,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 					b.errorLog.Println(err)
 				}
 				err = b.candidates.CallStoredProcedure("Compare_Work_experience", queryCandidat.Id_pos, queryCandidat.Id_possible_candidate)
-				failFlag, err := b.candidates.GetFailFlag(id)
+				failFlag, err := b.candidates.GetFlag("Fail_flag", id)
 				if err != nil {
 					b.errorLog.Println(err)
 				}
@@ -342,7 +342,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 					b.errorLog.Println(err)
 				}
 				err = b.candidates.CallStoredProcedure("Compare_hours", queryCandidat.Id_pos, queryCandidat.Id_possible_candidate)
-				failFlag, err := b.candidates.GetFailFlag(id)
+				failFlag, err := b.candidates.GetFlag("Fail_flag", id)
 				if err != nil {
 					b.errorLog.Println(err)
 				}
@@ -367,7 +367,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 					b.errorLog.Println(err)
 				}
 				err = b.candidates.CallStoredProcedure("Compare_work_format", queryCandidat.Id_pos, queryCandidat.Id_possible_candidate)
-				failFlag, err := b.candidates.GetFailFlag(id)
+				failFlag, err := b.candidates.GetFlag("Fail_flag", id)
 				if err != nil {
 					b.errorLog.Println(err)
 				}
@@ -388,7 +388,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				}
 				b.candidates.UpdateIntData("Expected_salary", queryCandidat.Expected_salary, queryCandidat.Id_possible_candidate)
 				err = b.candidates.CallStoredProcedure("Compare_Salary", queryCandidat.Id_pos, queryCandidat.Id_possible_candidate)
-				failFlag, err := b.candidates.GetFailFlag(id)
+				failFlag, err := b.candidates.GetFlag("Fail_flag", id)
 				if err != nil {
 					b.errorLog.Println(err)
 				}
@@ -417,7 +417,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 				}
 				b.candidates.UpdateBoolData("Ready_to_relocate", queryCandidat.Ready_to_relocate, queryCandidat.Id_possible_candidate)
 				err = b.candidates.CallStoredProcedure("Compare_relocation", queryCandidat.Id_pos, queryCandidat.Id_possible_candidate)
-				failFlag, err := b.candidates.GetFailFlag(id)
+				failFlag, err := b.candidates.GetFlag("Fail_flag", id)
 				if err != nil {
 					b.errorLog.Println(err)
 				}
@@ -447,6 +447,9 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 					b.errorLog.Println(err)
 				}
 				b.candidates.UpdateStringData("Contact_number", queryCandidat.Contact_number, queryCandidat.Id_possible_candidate)
+				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, finalMessage)
+				flagFeedback = true
+				b.SendMsg(msg)
 
 			case "Uncorrect number":
 				flagContactNumber = true
@@ -463,6 +466,7 @@ func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 	}
 
 }
+
 func (b *Bot) failFlag(update tgbotapi.Update) {
 	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, failTrueMessage)
 	b.SendMsg(msg)
@@ -477,6 +481,7 @@ func (b *Bot) initUpdatesChannel() (tgbotapi.UpdatesChannel, error) {
 
 	return b.bot.GetUpdatesChan(u)
 }
+
 func (b *Bot) IsBlockedUser() bool {
 	for key, _ := range BlockedUsers {
 		if key == b.bot.Self.UserName && BlockedUsers[key] == true {

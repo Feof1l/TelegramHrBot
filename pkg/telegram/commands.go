@@ -1,6 +1,8 @@
 package telegram
 
 import (
+	"encoding/json"
+	"os"
 	"regexp"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -206,6 +208,9 @@ var noQuestionKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // // inline меню
 	),
 )
 
+var finalMessage = `Спасибо! На этом, к сожалению, наш разговор подошёл к концу! 
+Мне было приятно с тобой общаться, надеюсь, тебе тоже! Если хочешь, можешь оставить свое впечатление о нашем диалоге, мне будет приятно!`
+
 func DetermineId_pos(profil, position string) int {
 	if profil == "Golang backend - developer" && position == "Junior" {
 		return 1
@@ -223,4 +228,17 @@ func isValidPhoneNumber(phoneNumber string) bool {
 
 	// Проверка соответствия номера телефона регулярному выражению
 	return result.MatchString(phoneNumber)
+}
+
+type Config struct {
+	TelegramBotToken string
+	DbMysqlParams    string
+}
+
+func DecodeConfig(fileName string) (Config, error) {
+	file, _ := os.Open(fileName)
+	decoder := json.NewDecoder(file)
+	configuration := Config{}
+	err := decoder.Decode(&configuration)
+	return configuration, err
 }

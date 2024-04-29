@@ -59,16 +59,17 @@ func (m *CandidatModel) InsertFeadBack(feadback string, id_possible_candidate in
 }
 
 // получение флага ошибки чтобы отснивать кандидатов
-func (m *CandidatModel) GetFailFlag(candidate_id int) (bool, error) {
-	var failFlag bool
-	if err := m.DB.QueryRow("SELECT fail_flag FROM Possible_candidate WHERE id_possible_candidate = ?", candidate_id).Scan(&failFlag); err != nil {
+func (m *CandidatModel) GetFlag(flagName string, candidate_id int) (bool, error) {
+	var flag bool
+	query := fmt.Sprintf("SELECT %s FROM Possible_candidate WHERE id_possible_candidate = ?", flagName)
+	if err := m.DB.QueryRow(query, candidate_id).Scan(&flag); err != nil {
 		if err == sql.ErrNoRows {
 			return false, ErrNoSuchRowInColumn
 		} else {
 			return false, err
 		}
 	}
-	return failFlag, nil
+	return flag, nil
 }
 
 // метод получения id по имени и нику
