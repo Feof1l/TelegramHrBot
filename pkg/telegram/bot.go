@@ -43,7 +43,7 @@ func (b *Bot) Start() error {
 }
 
 // метод удаления всех сообщений
-func (b *Bot) clearChatHistory(chatID int64) error {
+func (b *Bot) ClearChatHistory(chatID int64) error {
 	for key := range MessageIdDic {
 		msgToDelete := tgbotapi.DeleteMessageConfig{
 			ChatID:    chatID,
@@ -175,7 +175,7 @@ func (b *Bot) HandleUpdates(updates tgbotapi.UpdatesChannel) {
 			switch update.CallbackQuery.Data {
 			case "Block":
 				BlockedUsers[b.bot.Self.UserName] = true
-				err := b.clearChatHistory(update.CallbackQuery.Message.Chat.ID)
+				err := b.ClearChatHistory(update.CallbackQuery.Message.Chat.ID)
 				if err != nil {
 					b.errorLog.Println(err)
 				}
