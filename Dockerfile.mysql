@@ -1,0 +1,13 @@
+# Используем официальный образ MySQL как базовый образ
+FROM mysql:latest
+
+# Копируем файлы подключения к базе данных
+COPY . /go/src/PmiiHRbot/cmd/bot/main.go
+COPY . /go/src/PmiiHRbot/pkg/models
+
+
+# Устанавливаем переменные окружения для настройки базы данных
+ENV MYSQL_ROOT_PASSWORD=mysql
+ENV MYSQL_DATABASE=Candidates
+ENV MYSQL_USER=admin
+ENV MYSQL_PASSWORD=admin
