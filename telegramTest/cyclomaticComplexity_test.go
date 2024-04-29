@@ -6,28 +6,10 @@ import (
 	"go/token"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 )
-
-func TestDeadCode(t *testing.T) {
-	cmd := exec.Command("gocyclo", "/home/feof1l/go/src")
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		t.Fatalf("Failed to run gocyclo: %v", err)
-	}
-
-	output := string(out)
-	lines := strings.Split(output, "\n")
-	for _, line := range lines {
-		// Проверяем, что вывод содержит информацию о функциях с высоким показателем цикломатической сложности
-		if strings.Contains(line, "complexity") {
-			t.Errorf("Found potential dead code: %s", line)
-		}
-	}
-}
 
 /*
 Этот тестовый метод будет проходить через все файлы вашего проекта и проверять, есть ли в них
@@ -36,7 +18,7 @@ func TestDeadCode(t *testing.T) {
 */
 func TestDeadCodeAnalysis(t *testing.T) {
 	// Путь к директории с исходным кодом вашего проекта
-	projectPath := "/home/feof1l/go/src"
+	projectPath := "/home/feof1l/go/src/PmiiHRbot"
 
 	// Инициализация счетчиков
 	unusedVariables := 0

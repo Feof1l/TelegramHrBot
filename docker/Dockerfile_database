@@ -1,0 +1,11 @@
+# Используем официальный образ MySQL в качестве базового образа
+FROM mysql:latest
+
+# Установим переменные окружения для настройки MySQL
+ENV MYSQL_ROOT_PASSWORD=mysql
+ENV MYSQL_DATABASE=Candidates
+ENV MYSQL_USER=admin
+ENV MYSQL_PASSWORD=mysql
+
+# Копируем файл с инициализацией базы данных внутрь контейнера
+
