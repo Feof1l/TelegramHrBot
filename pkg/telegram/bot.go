@@ -221,7 +221,7 @@ func (b *Bot) HandleUpdates(updates tgbotapi.UpdatesChannel) {
 			msg.ReplyMarkup = choiseProfilKeyBoard
 
 			b.SendMsg(msg)*/
-			case "Golang backend - developer", "Java backend - developer":
+			case "Golang backend - developer", "Java backend - developer", "Frontend - developer", "Data Science - specialist":
 				queryPosition.Profil = update.CallbackQuery.Data
 				msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, choisePositionMessage)
 				b.SendMsg(msg)

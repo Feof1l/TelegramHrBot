@@ -39,11 +39,11 @@ var choiseProfil = `Здравствуйте! На данный момент н�
 var choiseProfilKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // // inline меню для сборе инофрмации о специализации
 	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("Go-разработчик", "Golang backend - developer"),
-		tgbotapi.NewInlineKeyboardButtonData("Java-разработчик", "jun java dev"),
+		tgbotapi.NewInlineKeyboardButtonData("Java-разработчик", "Java backend - developer"),
 	),
 	tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Frontend-разработчик", "middle js dev"),
-		tgbotapi.NewInlineKeyboardButtonData("Специалист DS", "middle data science"),
+		tgbotapi.NewInlineKeyboardButtonData("Frontend-разработчик", "Frontend - developer"),
+		tgbotapi.NewInlineKeyboardButtonData("Специалист DS", "Data Science - specialist"),
 	),
 )
 
@@ -214,8 +214,44 @@ var finalMessage = `Спасибо! На этом, к сожалению, наш
 func DetermineId_pos(profil, position string) int {
 	if profil == "Golang backend - developer" && position == "Junior" {
 		return 1
-	} else if profil == "java backend - developer" && position == "Middle" {
+	} else if profil == "Golang backend - developer" && position == "Intern" {
 		return 2
+	} else if profil == "Golang backend - developer" && position == "Middle" {
+		return 3
+	} else if profil == "Golang backend - developer" && position == "Senior" {
+		return 4
+	} else if profil == "Golang backend - developer" && position == "Team Lead" {
+		return 5
+	} else if profil == "Java backend - developer" && position == "Junior" {
+		return 6
+	} else if profil == "Java backend - developer" && position == "Intern" {
+		return 7
+	} else if profil == "Java backend - developer" && position == "Middle" {
+		return 8
+	} else if profil == "Java backend - developer" && position == "Senior" {
+		return 9
+	} else if profil == "Java backend - developer" && position == "Team Lead" {
+		return 10
+	} else if profil == "Frontend - developer" && position == "Junior" {
+		return 11
+	} else if profil == "Frontend - developer" && position == "Intern" {
+		return 12
+	} else if profil == "Frontend - developer" && position == "Middle" {
+		return 13
+	} else if profil == "Frontend - developer" && position == "Senior" {
+		return 14
+	} else if profil == "Frontend - developer" && position == "Team Lead" {
+		return 15
+	} else if profil == "Data Science - specialist" && position == "Junior" {
+		return 16
+	} else if profil == "Data Science - specialist" && position == "Intern" {
+		return 17
+	} else if profil == "Data Science - specialist" && position == "Middle" {
+		return 18
+	} else if profil == "Data Science - specialist" && position == "Senior" {
+		return 19
+	} else if profil == "Data Science - specialist" && position == "Team Lead" {
+		return 20
 	} else {
 		return 3
 	}
