@@ -47,7 +47,7 @@ var choiseProfilKeyBoard = tgbotapi.NewInlineKeyboardMarkup( // // inline мен
 	),
 )
 
-// сообщение с вопросом о позиции
+// сообщение с вопросом о позиции x
 var choisePositionMessage = `Выберите позицию, на которой хотите работать!`
 
 var choisePosition = `На данный момент у нас открыт набор на следующие позиции:`
